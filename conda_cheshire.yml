@@ -1,0 +1,15 @@
+name: cheshire
+channels:
+  - conda-forge
+dependencies:
+  - request
+  - pip:
+    - hjson
+    - mako
+    - pyyaml
+    - tabulate
+    - yapf
+    - mkdocs
+    - mkdocs-material
+    - markdown-grid-tables
+    - setuptools
