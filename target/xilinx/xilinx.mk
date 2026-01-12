@@ -6,6 +6,8 @@
 # Christopher Reinwardt <creinwar@student.ethz.ch>
 # Cyril Koenig <cykoenig@iis.ee.ethz.ch>
 # Paul Scheffler <paulsc@iis.ee.ethz.ch>
+# Yvan Tortorella <yvan.tortorella@gmail.com>
+# Mojtaba Rostami <m.rostami1989@gmail.com>
 
 VIVADO ?= vivado
 
@@ -13,6 +15,16 @@ CHS_XILINX_DIR ?= $(CHS_ROOT)/target/xilinx
 
 # Required to split stems
 .SECONDEXPANSION:
+
+###############
+# Generate HW #
+###############
+
+# FPGA-level configuration registers
+$(CHS_XILINX_DIR)/src/regs/chs_xilinx_reg_pkg.sv $(CHS_XILINX_DIR)/src/regs/chs_xilinx_reg_top.sv: $(CHS_XILINX_DIR)/src/regs/chs_xilinx_regs.hjson
+	$(REGTOOL) -r $< --outdir $(dir $@)
+
+CHS_XILINX_HW := $(CHS_XILINX_DIR)/src/regs/chs_xilinx_reg_pkg.sv $(CHS_XILINX_DIR)/src/regs/chs_xilinx_reg_top.sv
 
 ##############
 # Xilinx IPs #
@@ -24,28 +36,26 @@ $(CHS_XILINX_DIR)/build/%/:
 	mkdir -p $@
 
 # We split the stem into a board and an IP and resolve dependencies accordingly
-
 $(CHS_XILINX_DIR)/build/%/out.xci: \
 		$(CHS_XILINX_DIR)/scripts/impl_ip.tcl \
 		$$(wildcard $(CHS_XILINX_DIR)/src/ips/$$*.prj) \
 		| $(CHS_XILINX_DIR)/build/%/
-	@echo "VIVADO --------- $(VIVADO)"
 	@rm -f $(CHS_XILINX_DIR)/build/$(*)*.log $(CHS_XILINX_DIR)/build/$(*)*.jou
 	cd $| && $(VIVADO) -mode batch -log ../$*.log -jou ../$*.jou -source $< -tclargs $(subst ., ,$*)
-
 
 ##############
 # Bitstreams #
 ##############
 
-CHS_XILINX_BOARDS := genesys2 vcu128 zcu102
+CHS_XILINX_BOARDS := genesys2 vcu128 vcu118 zcu102
 
 CHS_XILINX_IPS_genesys2 := clkwiz vio mig7s
 CHS_XILINX_IPS_vcu128   := clkwiz vio ddr4
+CHS_XILINX_IPS_vcu118   := clkwiz vio ddr4
 CHS_XILINX_IPS_zcu102	:= clkwiz vio
 
-$(CHS_XILINX_DIR)/scripts/add_sources.%.tcl: $(CHS_ROOT)/Bender.yml
-	$(BENDER) script vivado -t fpga -t cv64a6_imafdcsclic_sv39 -t cva6 -t $* > $@
+$(CHS_XILINX_DIR)/scripts/add_sources.%.tcl: $(CHS_ROOT)/Bender.yml $(CHS_XILINX_HW)
+	$(BENDER) script vivado -t fpga -t $* $(CHS_BENDER_RTL_FLAGS) > $@
 
 define chs_xilinx_bit_rule
 $$(CHS_XILINX_DIR)/out/%.$(1).bit: \
@@ -56,9 +66,9 @@ $$(CHS_XILINX_DIR)/out/%.$(1).bit: \
 		| $$(CHS_XILINX_DIR)/build/$(1).%/
 	@rm -f $$(CHS_XILINX_DIR)/build/$$*.$(1)*.log $$(CHS_XILINX_DIR)/build/$$*.$(1)*.jou
 	cd $$| && $$(VIVADO) -mode batch -log ../$$*.$(1).log -jou ../$$*.$(1).jou -source $$< \
-		-tclargs "$(1)" "$$*" $$(CHS_XILINX_IPS_$(1):%="$$(CHS_XILINX_DIR)/build/$(1).%/out.xci")
+		-tclargs $(1) $$* $$(CHS_XILINX_IPS_$(1):%=$$(CHS_XILINX_DIR)/build/$(1).%/out.xci)
 
-.PHONY: chs-xilinx-$(1)
+CHS_PHONY += chs-xilinx-$(1)
 chs-xilinx-$(1): $$(CHS_XILINX_DIR)/out/cheshire.$(1).bit
 endef
 
@@ -76,24 +86,25 @@ CHS_XILINX_ALL = $(foreach board,$(CHS_XILINX_BOARDS),$$(CHS_XILINX_DIR)/out/che
 CHS_XILINX_HWS_URL ?= localhost:3121
 
 # We build the dependency file $(2) only if it does not exist; it must not be up to date.
+# We add PHONYs for each board as despite the implicit rule, these should be explicit.
 define chs_xilinx_util_rule
-chs-xilinx-$(1)-%: $$(CHS_XILINX_DIR)/scripts/util/$(1).tcl | $$(CHS_XILINX_DIR)/build/%.$(1)/
+CHS_PHONY += $(foreach board,$(CHS_XILINX_BOARDS),chs-xilinx-$(1)-$(board))
+$(foreach board,$(CHS_XILINX_BOARDS),chs-xilinx-$(1)-$(board)): chs-xilinx-$(1)-%: \
+		$$(CHS_XILINX_DIR)/scripts/util/$(1).tcl | $$(CHS_XILINX_DIR)/build/%.$(1)/
 	[ -e $(subst %,$$*,$(2)) ] || $$(MAKE) $(subst %,$$*,$(2))
 	@rm -f $$(CHS_XILINX_DIR)/build/$$(*)*.$(1).log $$(CHS_XILINX_DIR)/build/$$(*)*.$(1).jou
 	cd $$| && $$(VIVADO) -mode batch -log ../$$(*).$(1).log -jou ../$$(*).$(1).jou -source $$< \
-		-tclargs "$$(CHS_XILINX_HWS_URL) $$(or $$(CHS_XILINX_HWS_PATH_$$*),*) $$* $(subst %,$$*,$(2)) 0"
+		-tclargs $$(CHS_XILINX_HWS_URL) $$(or $$(CHS_XILINX_HWS_PATH_$$*),{*}) $$* $(subst %,$$*,$(2)) 0
 endef
 
-chs-xilinx-clean:
-	@echo "Cleaning Xilinx build files for board '$*'..."
-	rm -rf $(CHS_XILINX_DIR)/build/$*/
-
 # Program bitstream onto board
-.PHONY: chs-xilinx-program-%
 $(eval $(call chs_xilinx_util_rule,program,$(CHS_XILINX_DIR)/out/cheshire.%.bit))
 
 # Flash onboard memory with the file `CHS_XILINX_FLASH_IMG` (only selected boards).
 # `%` is substituted with the board name. The default is the Linux disk image for that board.
 CHS_XILINX_FLASH_IMG ?= $(CHS_SW_DIR)/boot/linux.%.gpt.bin
-.PHONY: chs-xilinx-flash-%
 $(eval $(call chs_xilinx_util_rule,flash,$(CHS_XILINX_FLASH_IMG)))
+
+chs-xilinx-clean:
+	@echo "Cleaning Xilinx build files for board '$*'..."
+	rm -rf $(CHS_XILINX_DIR)/build/$*/

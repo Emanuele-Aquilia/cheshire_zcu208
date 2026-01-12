@@ -31,6 +31,7 @@ package cheshire_pkg;
   localparam int unsigned SlinkNumLanes   = serial_link_single_channel_reg_pkg::NumBits/2;
   localparam int unsigned SlinkMaxClkDiv  = 1 << serial_link_single_channel_reg_pkg::Log2MaxClkDiv;
   localparam int unsigned ClintNumCores   = clint_reg_pkg::NumCores;
+  localparam int unsigned UsbNumPorts     = spinal_usb_ohci_pkg::NumPhyPorts;
 
   // Default JTAG ID code type
   typedef struct packed {
@@ -132,6 +133,7 @@ package cheshire_pkg;
     bit     Dma;
     bit     SerialLink;
     bit     Vga;
+    bit     Usb;
     bit     AxiRt;
     bit     Clic;
     bit     IrqRouter;
@@ -172,6 +174,10 @@ package cheshire_pkg;
     doub_bt SlinkTxAddrMask;
     doub_bt SlinkTxAddrDomain;
     dw_bt   SlinkUserAmoBit;
+    // Parameters for USB
+    dw_bt   UsbDmaMaxReads;
+    doub_bt UsbAddrMask;
+    doub_bt UsbAddrDomain;
     // Parameters for DMA
     dw_bt   DmaConfMaxReadTxns;
     dw_bt   DmaConfMaxWriteTxns;
@@ -190,6 +196,11 @@ package cheshire_pkg;
     aw_bt   AxiRtNumAddrRegions;
     bit     AxiRtCutPaths;
     bit     AxiRtEnableChecks;
+    // Parameters for CLIC
+    bit     ClicVsclic;
+    bit     ClicVsprio;
+    byte_bt ClicNumVsctxts;
+    aw_bt   ClicPrioWidth;
   } cheshire_cfg_t;
 
   //////////////////
@@ -212,6 +223,7 @@ package cheshire_pkg;
   typedef struct packed {
     cheshire_bus_err_intr_t bus_err;
     logic [31:0] gpio;
+    logic usb;
     logic spih_spi_event;
     logic spih_error;
     logic i2c_host_timeout;
@@ -271,13 +283,13 @@ package cheshire_pkg;
   localparam doub_bt AmRegs   = 'h0300_0000;
   localparam doub_bt AmLlc    = 'h0300_1000;
   localparam doub_bt AmSlink  = 'h0300_6000;
-  localparam doub_bt AmBusErr = 'h0300_8000;
+  localparam doub_bt AmBusErr = 'h0300_9000;
   localparam doub_bt AmSpm    = 'h1000_0000;  // Cached region at bottom, uncached on top
+  localparam doub_bt AmSpmUnc = 'h1400_0000;
   localparam doub_bt AmClic   = 'h0800_0000;
 
   // Static masks
-  localparam doub_bt AmSpmBaseUncached = 'h1400_0000;
-  localparam doub_bt AmSpmRegionMask   = 'h03FF_FFFF;
+  localparam doub_bt AmSpmRegionMask = 'h03FF_FFFF;
 
   // Reg bus error unit indices
   localparam int unsigned RegBusErrVga        = 0;
@@ -291,6 +303,7 @@ package cheshire_pkg;
     aw_bt dma;
     aw_bt slink;
     aw_bt vga;
+    aw_bt usb;
     aw_bt ext_base;
     aw_bt num_in;
   } axi_in_t;
@@ -303,6 +316,7 @@ package cheshire_pkg;
     if (cfg.Dma)        begin i++; ret.dma   = i; end
     if (cfg.SerialLink) begin i++; ret.slink = i; end
     if (cfg.Vga)        begin i++; ret.vga   = i; end
+    if (cfg.Usb)        begin i++; ret.usb   = i; end
     i++;
     ret.ext_base = i;
     ret.num_in = i + cfg.AxiExtNumMst;
@@ -346,7 +360,7 @@ package cheshire_pkg;
     if (cfg.LlcNotBypass) begin
       ret.spm = i;
       r++; ret.map[r] = '{i, AmSpm, AmSpm + SizeSpm};
-      r++; ret.map[r] = '{i, AmSpm + 'h0400_0000, AmSpm + 'h0400_0000 + SizeSpm};
+      r++; ret.map[r] = '{i, AmSpmUnc, AmSpmUnc + SizeSpm};
     end
     if (cfg.Dma)          begin i++; r++; ret.dma = i; ret.map[r] = '{i, 'h0100_0000, 'h0100_1000}; end
     if (cfg.SerialLink)   begin i++; r++; ret.slink = i;
@@ -384,6 +398,7 @@ package cheshire_pkg;
     aw_bt gpio;
     aw_bt slink;
     aw_bt vga;
+    aw_bt usb;
     aw_bt axirt;
     aw_bt irq_router;
     aw_bt [2**MaxCoresWidth-1:0] bus_err;
@@ -408,6 +423,7 @@ package cheshire_pkg;
     if (cfg.Gpio)         begin i++; ret.gpio       = i; r++; ret.map[r] = '{i, 'h0300_5000, 'h0300_6000}; end
     if (cfg.SerialLink)   begin i++; ret.slink      = i; r++; ret.map[r] = '{i, AmSlink, AmSlink +'h1000}; end
     if (cfg.Vga)          begin i++; ret.vga        = i; r++; ret.map[r] = '{i, 'h0300_7000, 'h0300_8000}; end
+    if (cfg.Usb)          begin i++; ret.usb        = i; r++; ret.map[r] = '{i, 'h0300_8000, 'h0300_9000}; end
     if (cfg.IrqRouter)    begin i++; ret.irq_router = i; r++; ret.map[r] = '{i, 'h0208_0000, 'h020c_0000}; end
     if (cfg.AxiRt)        begin i++; ret.axirt      = i; r++; ret.map[r] = '{i, 'h020c_0000, 'h0210_0000}; end
     if (cfg.Clic) for (int j = 0; j < cfg.NumCores; j++) begin
@@ -452,6 +468,7 @@ package cheshire_pkg;
 
   // Choose static colocation of IDs based on how heavily used and/or critical they are
   function automatic cva6_id_map_t gen_cva6_id_map(cheshire_cfg_t cfg);
+    int unsigned DefaultMapEntry[2] = '{0, 0};
     case (cfg.AxiMstIdWidth)
       // Provide exclusive ID to I-cache to prevent fetch blocking
       1: return '{'{Cva6IdBypMmu, 0}, '{Cva6IdBypLoad, 0}, '{Cva6IdBypAccel, 0}, '{Cva6IdBypStore, 0},
@@ -462,79 +479,51 @@ package cheshire_pkg;
       // Compress output ID space without any serialization
       3: return '{'{Cva6IdBypMmu, 0}, '{Cva6IdBypLoad, 1}, '{Cva6IdBypAccel, 6}, '{Cva6IdBypStore, 2},
                   '{Cva6IdBypAmo, 3}, '{Cva6IdICache,  4}, '{Cva6IdDCache,   5}};
-      // With 4b of ID or more, no remapping is necessary
-      default: return '{default: '{0, 0}};
+      // With 4b of ID or more, no remapping is necessary; return redundant 0 -> 0 ID remaps.
+      // This leaves ID mapping unaltered only if `MstIdBaseOffset` in `axi_id_serialize` is 0.
+      default: return '{Cva6IdsUsed {DefaultMapEntry}};
     endcase
   endfunction
 
-  function automatic config_pkg::cva6_cfg_t gen_cva6_cfg(cheshire_cfg_t cfg);
+  function automatic config_pkg::cva6_user_cfg_t gen_cva6_cfg(cheshire_cfg_t cfg);
     doub_bt SizeSpm = get_llc_size(cfg);
     doub_bt SizeLlcOut = cfg.LlcOutRegionEnd - cfg.LlcOutRegionStart;
     doub_bt CieBase   = cfg.Cva6ExtCieOnTop ? 64'h8000_0000 - cfg.Cva6ExtCieLength : 64'h2000_0000;
     doub_bt NoCieBase = cfg.Cva6ExtCieOnTop ? 64'h2000_0000 : 64'h2000_0000 + cfg.Cva6ExtCieLength;
-    return config_pkg::cva6_cfg_t'{
-      NrCommitPorts         : 2,
-      AxiAddrWidth          : cfg.AddrWidth,
-      AxiDataWidth          : cfg.AxiDataWidth,
-      AxiIdWidth            : Cva6IdWidth,
-      AxiUserWidth          : cfg.AxiUserWidth,
-      NrLoadBufEntries      : 2,
-      FpuEn                 : 1,
-      XF16                  : 0,
-      XF16ALT               : 0,
-      XF8                   : 0,
-      XF8ALT                : 0,
-      RVA                   : 1,
-      RVB                   : 0,
-      RVV                   : 0,
-      RVC                   : 1,
-      RVH                   : 1,
-      RVZCB                 : 1,
-      XFVec                 : 0,
-      CvxifEn               : 0,
-      ZiCondExtEn           : 1,
-      RVSCLIC               : cfg.Clic,
-      RVF                   : 1,
-      RVD                   : 1,
-      FpPresent             : 1,
-      NSX                   : 0,
-      FLen                  : 64,
-      RVFVec                : 0,
-      XF16Vec               : 0,
-      XF16ALTVec            : 0,
-      XF8Vec                : 0,
-      NrRgprPorts           : 0,
-      NrWbPorts             : 0,
-      EnableAccelerator     : 0,
-      RVS                   : 1,
-      RVU                   : 1,
-      HaltAddress           : AmDbg + 'h800,
-      ExceptionAddress      : AmDbg + 'h808,
-      RASDepth              : cfg.Cva6RASDepth,
-      BTBEntries            : cfg.Cva6BTBEntries,
-      BHTEntries            : cfg.Cva6BHTEntries,
-      DmBaseAddress         : AmDbg,
-      TvalEn                : 1,
-      NrPMPEntries          : cfg.Cva6NrPMPEntries,
-      PMPCfgRstVal          : {16{64'h0}},
-      PMPAddrRstVal         : {16{64'h0}},
-      PMPEntryReadOnly      : 16'd0,
-      NOCType               : config_pkg::NOC_TYPE_AXI4_ATOP,
-      CLICNumInterruptSrc   : NumCoreIrqs + NumIntIntrs + cfg.NumExtClicIntrs,
-      NrNonIdempotentRules  : 2,   // Periphs, ExtNonCIE
-      NonIdempotentAddrBase : {64'h0000_0000, NoCieBase},
-      NonIdempotentLength   : {64'h1000_0000, 64'h6000_0000 - cfg.Cva6ExtCieLength},
-      NrExecuteRegionRules  : 5,   // Debug, Bootrom, AllSPM, LLCOut, ExtCIE
-      ExecuteRegionAddrBase : {AmDbg, AmBrom, AmSpm, cfg.LlcOutRegionStart, CieBase},
-      ExecuteRegionLength   : {64'h40000, 64'h40000, 2*SizeSpm, SizeLlcOut, cfg.Cva6ExtCieLength},
-      NrCachedRegionRules   : 3,   // CachedSPM, LLCOut, ExtCIE
-      CachedRegionAddrBase  : {AmSpm,   cfg.LlcOutRegionStart,  CieBase},
-      CachedRegionLength    : {SizeSpm, SizeLlcOut,             cfg.Cva6ExtCieLength},
-      MaxOutstandingStores  : 7,
-      DebugEn               : 1,
-      NonIdemPotenceEn      : 0,
-      AxiBurstWriteEn       : 0
-    };
+    // Base our config on the upstream default for this variant
+    config_pkg::cva6_user_cfg_t ret = cva6_config_pkg::cva6_cfg;
+    // Modify what we need to
+    ret.AxiAddrWidth          = cfg.AddrWidth;
+    ret.AxiDataWidth          = cfg.AxiDataWidth;
+    ret.AxiIdWidth            = Cva6IdWidth;
+    ret.AxiUserWidth          = cfg.AxiUserWidth;
+    ret.CvxifEn               = 0;
+    ret.DmBaseAddress         = AmDbg;
+    ret.HaltAddress           = 'h800; // Relative to AmDbg
+    ret.ExceptionAddress      = 'h810; // Relative to AmDbg
+    ret.NrNonIdempotentRules  = 2;   // Periphs, ExtNonCI;
+    ret.NonIdempotentAddrBase = {64'h0000_0000, NoCieBase};
+    ret.NOCType               = config_pkg::NOC_TYPE_AXI4_ATOP;
+    ret.NonIdempotentLength   = {64'h1000_0000, 64'h6000_0000 - cfg.Cva6ExtCieLength};
+    ret.NrExecuteRegionRules  = 6;   // Debug, Bootrom, SPM, SPM Uncached, LLCOut, ExtCI;
+    ret.ExecuteRegionAddrBase = {AmDbg,     AmBrom,    AmSpm,   AmSpmUnc, cfg.LlcOutRegionStart, CieBase};
+    ret.ExecuteRegionLength   = {64'h40000, 64'h40000, SizeSpm, SizeSpm,  SizeLlcOut,            cfg.Cva6ExtCieLength};
+    ret.NrCachedRegionRules   = 3;   // CachedSPM, LLCOut, ExtCI;
+    ret.CachedRegionAddrBase  = {AmSpm,   cfg.LlcOutRegionStart,  CieBase};
+    ret.CachedRegionLength    = {SizeSpm, SizeLlcOut,             cfg.Cva6ExtCieLength};
+    ret.DebugEn               = 1;
+    ret.RVSCLIC               = cfg.Clic;
+    ret.RVXHCLIC              = cfg.ClicVsclic;
+    ret.CLICNumInterruptSrc   = NumCoreIrqs + NumIntIntrs + cfg.NumExtClicIntrs;
+    // TODO: Should some things be removed from the main config?
+    // TODO: Should other things be added to the main config?
+    // TODO: Tune missing parameters of interest (esp. cache and interconnect) properly
+    ret.RASDepth              = cfg.Cva6RASDepth;
+    ret.BTBEntries            = cfg.Cva6BTBEntries;
+    ret.BHTEntries            = cfg.Cva6BHTEntries;
+    ret.NrPMPEntries          = cfg.Cva6NrPMPEntries;
+    // Return modified config
+    return ret;
   endfunction
 
   ////////////////
@@ -594,6 +583,7 @@ package cheshire_pkg;
     Dma               : 1,
     SerialLink        : 1,
     Vga               : 1,
+    Usb               : 1,
     AxiRt             : 0,
     Clic              : 0,
     IrqRouter         : 0,
@@ -616,11 +606,11 @@ package cheshire_pkg;
     LlcAmoPostCut     : 1,
     LlcOutConnect     : 1,
     LlcOutRegionStart : 'h8000_0000,
-    LlcOutRegionEnd   : 'h1_0000_0000,
-    // VGA: RGB332
-    VgaRedWidth       : 3,
-    VgaGreenWidth     : 3,
-    VgaBlueWidth      : 2,
+    LlcOutRegionEnd   : 64'h1_0000_0000,
+    // VGA: RGB565
+    VgaRedWidth       : 5,
+    VgaGreenWidth     : 6,
+    VgaBlueWidth      : 5,
     VgaHCountWidth    : 24, // TODO: Default is 32; is this needed?
     VgaVCountWidth    : 24, // TODO: See above
     VgaBufferDepth    : 16,
@@ -629,11 +619,15 @@ package cheshire_pkg;
     SlinkMaxTxnsPerId : 4,
     SlinkMaxUniqIds   : 4,
     SlinkMaxClkDiv    : 1024,
-    SlinkRegionStart  : 'h1_0000_0000,
-    SlinkRegionEnd    : 'h2_0000_0000,
+    SlinkRegionStart  : 64'h1_0000_0000,
+    SlinkRegionEnd    : 64'h2_0000_0000,
     SlinkTxAddrMask   : 'hFFFF_FFFF,
     SlinkTxAddrDomain : 'h0000_0000,
     SlinkUserAmoBit   : 1,  // Convention: lower AMO bits for cores, MSB for serial link
+    // USB config
+    UsbDmaMaxReads    : 16,
+    UsbAddrMask       : 'hFFFF_FFFF,
+    UsbAddrDomain     : 'h0000_0000,
     // DMA config
     DmaConfMaxReadTxns  : 4,
     DmaConfMaxWriteTxns : 4,
@@ -651,6 +645,11 @@ package cheshire_pkg;
     AxiRtWBufferDepth   : 16,
     AxiRtNumAddrRegions : 2,
     AxiRtCutPaths       : 1,
+    // CLIC
+    ClicVsclic        : 0,
+    ClicVsprio        : 0,
+    ClicNumVsctxts    : 4,
+    ClicPrioWidth     : 1,
     // All non-set values should be zero
     default: '0
   };

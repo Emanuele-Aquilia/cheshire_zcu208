@@ -28,14 +28,12 @@ update_compile_order -fileset sources_1
 
 # Set synthesis properties
 # TODO: investigate resource-affordable retiming
-set_property XPM_LIBRARIES XPM_MEMORY         [current_project]
+set_property XPM_LIBRARIES XPM_MEMORY [current_project]
 set_property strategy Flow_PerfOptimized_high [get_runs synth_1]
 
 # Elaborate and open design to explore all clocks
 synth_design -rtl -name rtl_1
 report_clocks -file ${project_root}/clocks.rpt
-
-source ${xilinx_root}/scripts/zcu102-mpsoc.tcl
 
 # Synthesis
 launch_runs -jobs $num_jobs synth_1
@@ -62,7 +60,7 @@ gen_reports ${project_root}/reports.impl
 
 # Check timing constraints
 set trep [report_timing_summary -no_header -no_detailed_paths -return_string]
-if {![string match -nocase {*timing constraints are met*} $trep]} {
+if { ![string match -nocase {*timing constraints are met*} $trep] } {
     puts "Error: Timing constraints not met for ${proj} on ${board}."
     return -code error
 }
@@ -71,7 +69,5 @@ if {![string match -nocase {*timing constraints are met*} $trep]} {
 file mkdir ${xilinx_root}/out
 file copy -force ${project_root}/${proj}.runs/impl_1/cheshire_top_xilinx.bit \
     ${xilinx_root}/out/${proj}.${board}.bit
-file copy -force ${project_root}/${proj}.gen/hw_handoff/ps.hwh \
-    ${xilinx_root}/out/${proj}.${board}.hwh
 file copy -force ${project_root}/${proj}.runs/impl_1/cheshire_top_xilinx.ltx \
     ${xilinx_root}/out/${proj}.${board}.ltx

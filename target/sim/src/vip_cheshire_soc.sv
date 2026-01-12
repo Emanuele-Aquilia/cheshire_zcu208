@@ -12,6 +12,7 @@
 module vip_cheshire_soc import cheshire_pkg::*; #(
   // DUT (must be set)
   parameter cheshire_cfg_t DutCfg           = '0,
+  parameter bit           UseDramSys        = 0,
   parameter type          axi_ext_llc_req_t = logic,
   parameter type          axi_ext_llc_rsp_t = logic,
   parameter type          axi_ext_mst_req_t = logic,
@@ -92,37 +93,67 @@ module vip_cheshire_soc import cheshire_pkg::*; #(
   //  DRAM  //
   ////////////
 
-  axi_sim_mem #(
-    .AddrWidth          ( DutCfg.AddrWidth    ),
-    .DataWidth          ( DutCfg.AxiDataWidth ),
-    .IdWidth            ( $bits(axi_llc_id_t) ),
-    .UserWidth          ( DutCfg.AxiUserWidth ),
-    .axi_req_t          ( axi_llc_req_t ),
-    .axi_rsp_t          ( axi_llc_rsp_t ),
-    .WarnUninitialized  ( 0 ),
-    .ClearErrOnAccess   ( 1 ),
-    .ApplDelay          ( ClkPeriodSys * TAppl ),
-    .AcqDelay           ( ClkPeriodSys * TTest )
-  ) i_dram_sim_mem (
-    .clk_i              ( clk   ),
-    .rst_ni             ( rst_n ),
-    .axi_req_i          ( axi_llc_mst_req ),
-    .axi_rsp_o          ( axi_llc_mst_rsp ),
-    .mon_w_valid_o      ( ),
-    .mon_w_addr_o       ( ),
-    .mon_w_data_o       ( ),
-    .mon_w_id_o         ( ),
-    .mon_w_user_o       ( ),
-    .mon_w_beat_count_o ( ),
-    .mon_w_last_o       ( ),
-    .mon_r_valid_o      ( ),
-    .mon_r_addr_o       ( ),
-    .mon_r_data_o       ( ),
-    .mon_r_id_o         ( ),
-    .mon_r_user_o       ( ),
-    .mon_r_beat_count_o ( ),
-    .mon_r_last_o       ( )
-  );
+  if (UseDramSys) begin : gen_dramsys
+    dram_sim_engine #(
+      .ClkPeriod  ( ClkPeriodSys )
+    ) i_dram_sim_engine (
+      .clk_i  ( clk   ),
+      .rst_ni ( rst_n )
+    );
+    axi_dram_sim #(
+      .AxiAddrWidth ( DutCfg.AddrWidth ),
+      .AxiDataWidth ( DutCfg.AxiDataWidth ),
+      .AxiIdWidth   ( $bits(axi_llc_id_t) ),
+      .AxiUserWidth ( DutCfg.AxiUserWidth ),
+      .BASE         ( DutCfg.LlcOutRegionStart ),
+      .DRAMType     ( "DDR4" ),
+      .CustomerDRAM ( "none" ),
+      .axi_req_t    ( axi_llc_req_t ),
+      .axi_resp_t   ( axi_llc_rsp_t ),
+      .axi_ar_t     ( axi_llc_ar_chan_t ),
+      .axi_r_t      ( axi_llc_r_chan_t ),
+      .axi_aw_t     ( axi_llc_aw_chan_t ),
+      .axi_w_t      ( axi_llc_w_chan_t ),
+      .axi_b_t      ( axi_llc_b_chan_t )
+    ) i_axi_dram_sim (
+      .clk_i      ( clk ),
+      .rst_ni     ( rst_n ),
+      .axi_req_i  ( axi_llc_mst_req ),
+      .axi_resp_o ( axi_llc_mst_rsp )
+    );
+  end else begin : gen_no_dramsys
+    axi_sim_mem #(
+      .AddrWidth          ( DutCfg.AddrWidth    ),
+      .DataWidth          ( DutCfg.AxiDataWidth ),
+      .IdWidth            ( $bits(axi_llc_id_t) ),
+      .UserWidth          ( DutCfg.AxiUserWidth ),
+      .axi_req_t          ( axi_llc_req_t ),
+      .axi_rsp_t          ( axi_llc_rsp_t ),
+      .WarnUninitialized  ( 0 ),
+      .ClearErrOnAccess   ( 1 ),
+      .ApplDelay          ( ClkPeriodSys * TAppl ),
+      .AcqDelay           ( ClkPeriodSys * TTest )
+    ) i_dram_sim_mem (
+      .clk_i              ( clk   ),
+      .rst_ni             ( rst_n ),
+      .axi_req_i          ( axi_llc_mst_req ),
+      .axi_rsp_o          ( axi_llc_mst_rsp ),
+      .mon_w_valid_o      ( ),
+      .mon_w_addr_o       ( ),
+      .mon_w_data_o       ( ),
+      .mon_w_id_o         ( ),
+      .mon_w_user_o       ( ),
+      .mon_w_beat_count_o ( ),
+      .mon_w_last_o       ( ),
+      .mon_r_valid_o      ( ),
+      .mon_r_addr_o       ( ),
+      .mon_r_data_o       ( ),
+      .mon_r_id_o         ( ),
+      .mon_r_user_o       ( ),
+      .mon_r_beat_count_o ( ),
+      .mon_r_last_o       ( )
+    );
+  end
 
   ///////////////////////////////
   //  SoC Clock, Reset, Modes  //
@@ -197,7 +228,7 @@ module vip_cheshire_soc import cheshire_pkg::*; #(
   assign jtag.tdo     = jtag_tdo;
 
   initial begin
-    @(negedge rst_n);
+    wait (!rst_n);
     jtag_dbg.reset_master();
   end
 
@@ -293,6 +324,7 @@ module vip_cheshire_soc import cheshire_pkg::*; #(
   endtask
 
   // Load a binary
+  // Note: all sections must be 64b-aligned
   task automatic jtag_elf_preload(input string binary, output doub_bt entry);
     longint sec_addr, sec_len;
     $display("[JTAG] Preloading ELF binary: %s", binary);
@@ -438,6 +470,7 @@ module vip_cheshire_soc import cheshire_pkg::*; #(
   initial begin
     static byte_bt uart_read_buf [$];
     byte_bt bite;
+    string line;
     wait_for_reset();
     forever begin
       uart_read_byte(bite);
@@ -445,8 +478,13 @@ module vip_cheshire_soc import cheshire_pkg::*; #(
         uart_boot_byte  = bite;
         uart_boot_ena = 0;
       end else if (bite == "\n") begin
-        $display("[UART] %s", {>>8{uart_read_buf}});
-        uart_read_buf.delete();
+        if (uart_read_buf.size() > 0) begin
+          line = {>>8{uart_read_buf}};
+          $display("[UART] %s", line);
+          uart_read_buf.delete();
+        end else begin
+          $display("[UART]");
+        end
       end else if (bite == UartDebugEoc) begin
         uart_boot_eoc = 1;
       end else begin
@@ -513,12 +551,12 @@ module vip_cheshire_soc import cheshire_pkg::*; #(
     $display("[UART] Waiting for debug loop to start");
     #(UartWaitCycles*UartBaudPeriod);
     // We send an ACK challenge to the debug server and wait for an ACK response
-    $display("[UART] Sending ACK chellenge");
+    $display("[UART] Sending ACK challenge");
     uart_write_byte(UartDebugAck);
     uart_boot_scoop_expect("ACK", UartDebugAck);
     // Preload
     uart_debug_elf_preload(binary, entry);
-  $display("[UART] Sending EXEC command for address %0x", entry);
+    $display("[UART] Sending EXEC command for address %0x", entry);
     // Send exec command and receive ACK
     uart_write_byte(UartDebugCmdExec);
     for (int i = 0; i < 8; ++i)
@@ -613,7 +651,7 @@ module vip_cheshire_soc import cheshire_pkg::*; #(
     .AXI_DATA_WIDTH ( DutCfg.AxiDataWidth  ),
     .AXI_ID_WIDTH   ( DutCfg.AxiMstIdWidth ),
     .AXI_USER_WIDTH ( DutCfg.AxiUserWidth  )
-  ) slink_mst_ext(), slink_mst_vip(), slink_mst();
+  ) slink_mst_ext(), slink_mst_vip(), slink_mst(), slink_slv_mux[1:0]();
 
   AXI_BUS #(
     .AXI_ADDR_WIDTH ( DutCfg.AddrWidth       ),
@@ -631,6 +669,9 @@ module vip_cheshire_soc import cheshire_pkg::*; #(
     .clk_i  ( clk )
   );
 
+  `AXI_ASSIGN (slink_slv_mux[0], slink_mst_ext)
+  `AXI_ASSIGN (slink_slv_mux[1], slink_mst_vip)
+
   // Multiplex internal and external AXI requests
   axi_mux_intf #(
     .SLV_AXI_ID_WIDTH ( DutCfg.AxiMstIdWidth   ),
@@ -643,8 +684,8 @@ module vip_cheshire_soc import cheshire_pkg::*; #(
     .clk_i  ( clk ),
     .rst_ni ( rst_n ),
     .test_i ( test_mode ),
-    .slv    ( '{slink_mst_vip, slink_mst_ext} ),
-    .mst    ( slink_mst_mux  )
+    .slv    ( slink_slv_mux ),
+    .mst    ( slink_mst_mux )
   );
 
   // Serialize away added AXI index bits
@@ -750,7 +791,7 @@ module vip_cheshire_soc import cheshire_pkg::*; #(
   slink_axi_driver_t slink_axi_driver = new (slink_mst_vip_dv);
 
   initial begin
-    @(negedge rst_n);
+    wait (!rst_n);
     slink_axi_driver.reset_master();
   end
 
@@ -844,39 +885,44 @@ module vip_cheshire_soc import cheshire_pkg::*; #(
 
   // Load a binary
   task automatic slink_elf_preload(input string binary, output doub_bt entry);
-    longint sec_addr, sec_len, bus_offset, write_addr;
+    longint sec_addr, sec_len;
     $display("[SLINK] Preloading ELF binary: %s", binary);
     if (read_elf(binary))
       $fatal(1, "[SLINK] Failed to load ELF!");
     while (get_section(sec_addr, sec_len)) begin
       byte bf[] = new [sec_len];
+      int burst_len;
       $display("[SLINK] Preloading section at 0x%h (%0d bytes)", sec_addr, sec_len);
       if (read_section(sec_addr, bf, sec_len)) $fatal(1, "[SLINK] Failed to read ELF section!");
-      // Write section as fixed-size bursts
-      bus_offset = sec_addr[AxiStrbBits-1:0];
-      for (longint i = 0; i <= sec_len ; i += SlinkBurstBytes) begin
-        axi_data_t beats [$];
-        if (i != 0)
-          $display("[SLINK] - %0d/%0d bytes (%0d%%)", i, sec_len, i*100/(sec_len>1 ? sec_len-1 : 1));
-        // Assemble beats for current burst from section buffer
-        for (int b = 0; b < SlinkBurstBytes; b += AxiStrbWidth) begin
-          axi_data_t beat;
-          // We handle incomplete bursts
-          if (i+b-bus_offset >= sec_len) break;
+      // Write section in bursts <= SlinkBurstBytes that never cross a 4 KiB page
+      for (longint sec_offs = 0; sec_offs < sec_len; sec_offs += burst_len) begin
+        longint sec_left, page_left;
+        axi_data_t beats[$];
+        int bus_offs;
+        addr_t addr_cur = sec_addr + sec_offs;
+        if (sec_offs != 0) begin
+          $display("[SLINK] - %0d/%0d bytes (%0d%%)", sec_offs, sec_len,
+                   sec_offs*100/(sec_len > 1 ? sec_len - 1 : 1));
+        end
+        // By default the burst length is SlinkBurstBytes
+        burst_len = SlinkBurstBytes;
+        // Cut the burst length if it exceeds the remaining section length
+        // or it crosses a 4 KiB page boundary
+        sec_left  = sec_len - sec_offs;
+        page_left = 4096 - (addr_cur & 12'hFFF);
+        if (burst_len > sec_left)  burst_len = int'(sec_left);
+        if (burst_len > page_left) burst_len = int'(page_left);
+        bus_offs = addr_cur[AxiStrbBits-1:0];
+        // Assemble beats, handling unaligned start in the first beat
+        for (int b = -bus_offs; b < burst_len; b += AxiStrbWidth) begin
+          axi_data_t beat = '0;
           for (int e = 0; e < AxiStrbWidth; ++e)
-            if (i+b+e < bus_offset) begin
-              beat[8*e +: 8] = '0;
-            end else if (i+b+e-bus_offset >= sec_len) begin
-              beat[8*e +: 8] = '0;
-            end else begin
-              beat[8*e +: 8] = bf [i+b+e-bus_offset];
-            end
-
+            if (b + e >= 0 && b + e < burst_len)
+              beat[8*e +: 8] = bf[sec_offs + b + e];
           beats.push_back(beat);
         end
-        write_addr = sec_addr + (i==0 ? 0 : i - sec_addr%AxiStrbWidth);
-        // Write this burst
-        slink_write_beats(write_addr, AxiStrbBits, beats);
+        // Address must be beat‑aligned for slink_write_beats
+        slink_write_beats(addr_cur - bus_offs, AxiStrbBits, beats);
       end
     end
     void'(get_entry(entry));
@@ -916,20 +962,20 @@ endmodule
 
 module vip_cheshire_soc_tristate import cheshire_pkg::*; (
   // I2C pad IO
-  output logic  i2c_sda_i,
-  input  logic  i2c_sda_o,
-  input  logic  i2c_sda_en,
-  output logic  i2c_scl_i,
-  input  logic  i2c_scl_o,
-  input  logic  i2c_scl_en,
+  output wire i2c_sda_i,
+  input  wire i2c_sda_o,
+  input  wire i2c_sda_en,
+  output wire i2c_scl_i,
+  input  wire i2c_scl_o,
+  input  wire i2c_scl_en,
   // SPI host pad IO
-  input  logic                  spih_sck_o,
-  input  logic                  spih_sck_en,
-  input  logic [SpihNumCs-1:0]  spih_csb_o,
-  input  logic [SpihNumCs-1:0]  spih_csb_en,
-  output logic [ 3:0]           spih_sd_i,
-  input  logic [ 3:0]           spih_sd_o,
-  input  logic [ 3:0]           spih_sd_en,
+  input  wire                  spih_sck_o,
+  input  wire                  spih_sck_en,
+  input  wire [SpihNumCs-1:0]  spih_csb_o,
+  input  wire [SpihNumCs-1:0]  spih_csb_en,
+  output wire [ 3:0]           spih_sd_i,
+  input  wire [ 3:0]           spih_sd_o,
+  input  wire [ 3:0]           spih_sd_en,
   // I2C wires
   inout  wire i2c_sda,
   inout  wire i2c_scl,

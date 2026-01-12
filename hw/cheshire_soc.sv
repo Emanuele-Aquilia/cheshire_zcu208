@@ -96,7 +96,16 @@ module cheshire_soc import cheshire_pkg::*; #(
   output logic                          vga_vsync_o,
   output logic [Cfg.VgaRedWidth  -1:0]  vga_red_o,
   output logic [Cfg.VgaGreenWidth-1:0]  vga_green_o,
-  output logic [Cfg.VgaBlueWidth -1:0]  vga_blue_o
+  output logic [Cfg.VgaBlueWidth -1:0]  vga_blue_o,
+  // USB interface
+  input  logic                   usb_clk_i,
+  input  logic                   usb_rst_ni,
+  input  logic [UsbNumPorts-1:0] usb_dm_i,
+  output logic [UsbNumPorts-1:0] usb_dm_o,
+  output logic [UsbNumPorts-1:0] usb_dm_oe_o,
+  input  logic [UsbNumPorts-1:0] usb_dp_i,
+  output logic [UsbNumPorts-1:0] usb_dp_o,
+  output logic [UsbNumPorts-1:0] usb_dp_oe_o
 );
 
   `include "axi/typedef.svh"
@@ -492,9 +501,9 @@ module cheshire_soc import cheshire_pkg::*; #(
     // This is necessary for routing in the LLC-internal interconnect.
     always_comb begin
       axi_llc_remap_req = axi_llc_cut_req;
-      if (axi_llc_cut_req.aw.addr & ~AmSpmRegionMask == AmSpmBaseUncached & ~AmSpmRegionMask)
+      if ((axi_llc_cut_req.aw.addr & ~AmSpmRegionMask) == (AmSpmUnc & ~AmSpmRegionMask))
         axi_llc_remap_req.aw.addr  = AmSpm | (AmSpmRegionMask & axi_llc_cut_req.aw.addr);
-      if (axi_llc_cut_req.ar.addr & ~AmSpmRegionMask == AmSpmBaseUncached & ~AmSpmRegionMask)
+      if ((axi_llc_cut_req.ar.addr & ~AmSpmRegionMask) == (AmSpmUnc & ~AmSpmRegionMask))
         axi_llc_remap_req.ar.addr = AmSpm | (AmSpmRegionMask & axi_llc_cut_req.ar.addr);
       axi_llc_cut_rsp = axi_llc_remap_rsp;
     end
@@ -549,7 +558,7 @@ module cheshire_soc import cheshire_pkg::*; #(
 
   `CHESHIRE_TYPEDEF_AXI_CT(axi_cva6, addr_t, cva6_id_t, axi_data_t, axi_strb_t, axi_user_t)
 
-  localparam config_pkg::cva6_cfg_t Cva6Cfg = gen_cva6_cfg(Cfg);
+  localparam config_pkg::cva6_user_cfg_t Cva6Cfg = gen_cva6_cfg(Cfg);
 
   // Boot from boot ROM only if available, otherwise from platform ROM
   localparam logic [63:0] BootAddr = 64'(Cfg.Bootrom ? AmBrom : Cfg.PlatformRom);
@@ -589,9 +598,11 @@ module cheshire_soc import cheshire_pkg::*; #(
     logic [$clog2(NumClicIntrs)-1:0] clic_irq_id;
     logic [7:0]        clic_irq_level;
     riscv::priv_lvl_t  clic_irq_priv;
+    logic              clic_irq_v;
+    logic [5:0]        clic_irq_vsid;
 
     cva6 #(
-      .CVA6Cfg        ( Cva6Cfg ),
+      .CVA6Cfg        ( build_config_pkg::build_config(Cva6Cfg) ),
       .axi_ar_chan_t  ( axi_cva6_ar_chan_t ),
       .axi_aw_chan_t  ( axi_cva6_aw_chan_t ),
       .axi_w_chan_t   ( axi_cva6_w_chan_t  ),
@@ -612,6 +623,8 @@ module cheshire_soc import cheshire_pkg::*; #(
       .clic_irq_id_i    ( clic_irq_id    ),
       .clic_irq_level_i ( clic_irq_level ),
       .clic_irq_priv_i  ( clic_irq_priv  ),
+      .clic_irq_v_i     ( clic_irq_v     ),
+      .clic_irq_vsid_i  ( clic_irq_vsid  ),
       .clic_irq_shv_i   ( clic_irq_shv   ),
       .clic_irq_ready_o ( clic_irq_ready ),
       .clic_kill_req_i  ( clic_irq_kill_req ),
@@ -666,12 +679,16 @@ module cheshire_soc import cheshire_pkg::*; #(
       };
 
       clic #(
-        .N_SOURCE   ( NumClicIntrs ),
-        .INTCTLBITS ( Cfg.ClicIntCtlBits ),
-        .reg_req_t  ( reg_req_t ),
-        .reg_rsp_t  ( reg_rsp_t ),
-        .SSCLIC     ( 1 ),
-        .USCLIC     ( 0 )
+        .N_SOURCE    ( NumClicIntrs ),
+        .INTCTLBITS  ( Cfg.ClicIntCtlBits ),
+        .reg_req_t   ( reg_req_t ),
+        .reg_rsp_t   ( reg_rsp_t ),
+        .SSCLIC      ( 1 ),
+        .USCLIC      ( 0 ),
+        .VSCLIC      ( Cfg.ClicVsclic ),
+        .N_VSCTXTS   ( Cfg.ClicNumVsctxts ),
+        .VSPRIO      ( Cfg.ClicVsprio ),
+        .VSPRIO_W    ( Cfg.ClicPrioWidth )
       ) i_clic (
         .clk_i,
         .rst_ni,
@@ -684,6 +701,8 @@ module cheshire_soc import cheshire_pkg::*; #(
         .irq_level_o    ( clic_irq_level ),
         .irq_shv_o      ( clic_irq_shv   ),
         .irq_priv_o     ( clic_irq_priv  ),
+        .irq_v_o        ( clic_irq_v     ),
+        .irq_vsid_o     ( clic_irq_vsid  ),
         .irq_kill_req_o ( clic_irq_kill_req ),
         .irq_kill_ack_i ( clic_irq_kill_ack )
       );
@@ -695,6 +714,8 @@ module cheshire_soc import cheshire_pkg::*; #(
       assign clic_irq_level    = '0;
       assign clic_irq_shv      = '0;
       assign clic_irq_priv     = riscv::priv_lvl_t'(0);
+      assign clic_irq_v        = '0;
+      assign clic_irq_vsid     = '0;
       assign clic_irq_kill_req = '0;
 
     end
@@ -992,6 +1013,7 @@ module cheshire_soc import cheshire_pkg::*; #(
       dma         : Cfg.Dma,
       serial_link : Cfg.SerialLink,
       vga         : Cfg.Vga,
+      usb         : Cfg.Usb,
       axirt       : Cfg.AxiRt,
       clic        : Cfg.Clic,
       irq_router  : Cfg.IrqRouter,
@@ -1412,22 +1434,22 @@ module cheshire_soc import cheshire_pkg::*; #(
       axi_in_req[AxiIn.dma].ar.user = Cfg.AxiUserDefault;
     end
 
-    dma_core_wrap #(
-      .AxiAddrWidth       ( Cfg.AddrWidth           ),
-      .AxiDataWidth       ( Cfg.AxiDataWidth        ),
-      .AxiIdWidth         ( Cfg.AxiMstIdWidth       ),
-      .AxiUserWidth       ( Cfg.AxiUserWidth        ),
-      .AxiSlvIdWidth      ( AxiSlvIdWidth           ),
-      .NumAxInFlight      ( Cfg.DmaNumAxInFlight    ),
-      .MemSysDepth        ( Cfg.DmaMemSysDepth      ),
-      .JobFifoDepth       ( Cfg.DmaJobFifoDepth     ),
-      .RAWCouplingAvail   ( Cfg.DmaRAWCouplingAvail ),
-      .IsTwoD             ( Cfg.DmaConfEnableTwoD   ),
-      .axi_mst_req_t      ( axi_mst_req_t           ),
-      .axi_mst_rsp_t      ( axi_mst_rsp_t           ),
-      .axi_slv_req_t      ( axi_slv_req_t           ),
-      .axi_slv_rsp_t      ( axi_slv_rsp_t           )
-    ) i_dma (
+    cheshire_idma_wrap #(
+      .AxiAddrWidth     ( Cfg.AddrWidth     ),
+      .AxiDataWidth     ( Cfg.AxiDataWidth  ),
+      .AxiIdWidth       ( Cfg.AxiMstIdWidth ),
+      .AxiUserWidth     ( Cfg.AxiUserWidth  ),
+      .AxiSlvIdWidth    ( AxiSlvIdWidth     ),
+      .NumAxInFlight    ( Cfg.DmaNumAxInFlight    ),
+      .MemSysDepth      ( Cfg.DmaMemSysDepth      ),
+      .JobFifoDepth     ( Cfg.DmaJobFifoDepth     ),
+      .RAWCouplingAvail ( Cfg.DmaRAWCouplingAvail ),
+      .IsTwoD           ( Cfg.DmaConfEnableTwoD   ),
+      .axi_mst_req_t    ( axi_mst_req_t ),
+      .axi_mst_rsp_t    ( axi_mst_rsp_t ),
+      .axi_slv_req_t    ( axi_slv_req_t ),
+      .axi_slv_rsp_t    ( axi_slv_rsp_t )
+    ) i_idma (
       .clk_i,
       .rst_ni,
       .testmode_i     ( test_mode_i ),
@@ -1651,6 +1673,57 @@ module cheshire_soc import cheshire_pkg::*; #(
 
   if (!(Cfg.Vga && Cfg.BusErr)) begin : gen_vga_bus_err_tie
     assign intr.intn.bus_err.vga = '0;
+  end
+
+  ///////////
+  //  USB  //
+  ///////////
+
+  if (Cfg.Usb) begin : gen_usb
+
+    // TODO: USB has no internal error handling, so it should have a bus error unit.
+
+    spinal_usb_ohci #(
+      .AxiMaxReads    ( Cfg.UsbDmaMaxReads ),
+      .AxiAddrWidth   ( Cfg.AddrWidth     ),
+      .AxiDataWidth   ( Cfg.AxiDataWidth  ),
+      .AxiIdWidth     ( Cfg.AxiMstIdWidth ),
+      .AxiUserWidth   ( Cfg.AxiUserWidth  ),
+      .AxiId          ( '0 ),
+      .AxiUser        ( Cfg.AxiUserDefault ),
+      .AxiAddrDomain  ( Cfg.UsbAddrDomain ),
+      .AxiAddrMask    ( Cfg.UsbAddrMask   ),
+      .reg_req_t      ( reg_req_t ),
+      .reg_rsp_t      ( reg_rsp_t ),
+      .axi_req_t      ( axi_mst_req_t ),
+      .axi_rsp_t      ( axi_mst_rsp_t )
+    ) i_spinal_usb_ohci (
+      .soc_clk_i    ( clk_i  ),
+      .soc_rst_ni   ( rst_ni ),
+      .ctrl_req_i   ( reg_out_req[RegOut.usb] ),
+      .ctrl_rsp_o   ( reg_out_rsp[RegOut.usb] ),
+      .dma_req_o    ( axi_in_req[AxiIn.usb] ),
+      .dma_rsp_i    ( axi_in_rsp[AxiIn.usb] ),
+      .intr_o       ( intr.intn.usb ),
+      .phy_clk_i    ( usb_clk_i   ),
+      .phy_rst_ni   ( usb_rst_ni  ),
+      .phy_dm_i     ( usb_dm_i    ),
+      .phy_dm_o     ( usb_dm_o    ),
+      .phy_dm_oe_o  ( usb_dm_oe_o ),
+      .phy_dp_i     ( usb_dp_i    ),
+      .phy_dp_o     ( usb_dp_o    ),
+      .phy_dp_oe_o  ( usb_dp_oe_o )
+    );
+
+  end else begin : gen_no_usb
+
+    assign usb_dm_o    = '0;
+    assign usb_dm_oe_o = '0;
+    assign usb_dp_o    = '0;
+    assign usb_dp_oe_o = '0;
+
+    assign intr.intn.usb = 0;
+
   end
 
   //////////////////

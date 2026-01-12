@@ -5,6 +5,7 @@
 # Nils Wistoff <nwistoff@iis.ee.ethz.ch>
 # Noah Huetter <huettern@iis.ee.ethz.ch>
 # Paul Scheffler <paulsc@iis.ee.ethz.ch>
+# Yvan Tortorella <yvan.tortorella@gmail.com>
 
 # Open hardware target
 set xilinx_root [file dirname [file dirname [file dirname [file normalize [info script]]]]]
@@ -20,9 +21,10 @@ create_hw_cfgmem -hw_device $hw_device $hw_memdev
 set hw_cfgmem [get_property PROGRAM.HW_CFGMEM $hw_device]
 
 # Create image for and configure memory depending on board
-# TODO: add bitstream flashing for genesys2
 switch $board {
-    vcu128 {
+    genesys2 -
+    vcu118   -
+    vcu128   {
         set mcs ${project_root}/image.mcs
         write_cfgmem -force -format mcs -size 256 -interface SPIx4 \
             -loaddata "up $offs $file" -checksum -file $mcs
@@ -36,9 +38,9 @@ switch $board {
             PROGRAM.CFG_PROGRAM {1} \
             PROGRAM.VERIFY {1} \
             PROGRAM.CHECKSUM {0} \
-        ] $hw_cfgmem
+            ] $hw_cfgmem
     }
-    default {nocfgexit flash_spi $board}
+    default { nocfgexit flash_spi $board }
 }
 
 # Create bitstream to access config memory
