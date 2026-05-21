@@ -28,6 +28,13 @@ set bpart(zcu102)   "xilinx.com:zcu102:part0:3.4"
 set fpart(zcu102)   "xczu9eg-ffvb1156-2-e"
 set hwdev(zcu102)   "xczu9eg_0"
 
+# zcu208 board params
+set bpart(zcu208)   "xilinx.com:zcu208:part0:2.0"
+set fpart(zcu208)   "xczu48dr-fsvg1517-2-e"
+set hwdev(zcu208)   "xczu48dr_0"
+#maybe I need the cfgmp
+
+
 # Initialize an implementation project
 proc init_impl {xilinx_root argc argv} {
     global fpart
@@ -44,8 +51,8 @@ proc init_impl {xilinx_root argc argv} {
         return -code error
     }
     # Configure parallelism
-    set num_threads 8
-    set num_jobs 8
+    set num_threads 22
+    set num_jobs 22
     # Get arguments
     set board [lindex $argv 0]
     set proj [lindex $argv 1]
@@ -111,6 +118,32 @@ proc gen_reports {rptdir} {
     report_clock_interaction -file ${rptdir}/clock_interaction.rpt
     report_timing_summary    -file ${rptdir}/timing_summary.rpt
     # tclint-enable spacing, line-length
+}
+
+# Fail fast on unconstrained top-level ports.
+proc check_unconstrained_ports {} {
+    set missing_io [list]
+    set missing_pin [list]
+    foreach port [get_ports] {
+        set io [get_property IOSTANDARD $port]
+        if { $io eq "" || $io eq "DEFAULT" } {
+            lappend missing_io $port
+        }
+        set pin [get_property PACKAGE_PIN $port]
+        if { $pin eq "" } {
+            lappend missing_pin $port
+        }
+    }
+    if { [llength $missing_io] || [llength $missing_pin] } {
+        puts "Error: Unconstrained top-level ports detected."
+        if { [llength $missing_io] } {
+            puts "Missing IOSTANDARD: $missing_io"
+        }
+        if { [llength $missing_pin] } {
+            puts "Missing PACKAGE_PIN: $missing_pin"
+        }
+        return -code error
+    }
 }
 
 # Insert debug core and ILAs

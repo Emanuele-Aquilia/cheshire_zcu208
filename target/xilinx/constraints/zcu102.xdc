@@ -1084,16 +1084,18 @@ set_property -dict {PACKAGE_PIN H14 IOSTANDARD LVCMOS33} [get_ports uart_rx_i_gp
 set_property -dict {PACKAGE_PIN J14 IOSTANDARD LVCMOS33} [get_ports uart_tx_o_gpio]
 
 # Map the second UART
-set_property -dict {PACKAGE_PIN E13 IOSTANDARD LVCMOS33} [get_ports uart_rx_i_cp2108]
-set_property -dict {PACKAGE_PIN F13 IOSTANDARD LVCMOS33} [get_ports uart_tx_o_cp2108]
+set_property -dict {PACKAGE_PIN E13 IOSTANDARD LVCMOS33} [get_ports uart_tx_o_cp2108]
+set_property -dict {PACKAGE_PIN F13 IOSTANDARD LVCMOS33} [get_ports uart_rx_i_cp2108]
 
 ######################################################################
 # JTAG mapping
+# Physical FMC pins are NOT used: CVA6 JTAG is routed through BSCANE2
+# USER2, accessible via the PS JTAG / J2 USB connector. See USE_BSCANE2.
 ######################################################################
-set_property -dict {PACKAGE_PIN A20 IOSTANDARD LVCMOS33} [get_ports jtag_tms_i]
-set_property -dict {PACKAGE_PIN B20 IOSTANDARD LVCMOS33} [get_ports jtag_tdi_i]
-set_property -dict {PACKAGE_PIN A22 IOSTANDARD LVCMOS33} [get_ports jtag_tdo_o]
-set_property -dict {PACKAGE_PIN A21 IOSTANDARD LVCMOS33} [get_ports jtag_tck_i]
+# set_property -dict {PACKAGE_PIN A20 IOSTANDARD LVCMOS33} [get_ports jtag_tms_i]
+# set_property -dict {PACKAGE_PIN B20 IOSTANDARD LVCMOS33} [get_ports jtag_tdi_i]
+# set_property -dict {PACKAGE_PIN A22 IOSTANDARD LVCMOS33} [get_ports jtag_tdo_o]
+# set_property -dict {PACKAGE_PIN A21 IOSTANDARD LVCMOS33} [get_ports jtag_tck_i]
 # set_property -dict {PACKAGE_PIN B21 IOSTANDARD LVCMOS33} [get_ports jtag_trst_i]
 
 ######################################################################

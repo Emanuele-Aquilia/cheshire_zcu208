@@ -47,6 +47,7 @@ module cheshire_top_xilinx import cheshire_pkg::*; #(
 `endif
 
 `ifdef USE_JTAG
+`ifndef USE_BSCANE2
   input  logic  jtag_tck_i,
   input  logic  jtag_tms_i,
   input  logic  jtag_tdi_i,
@@ -57,8 +58,9 @@ module cheshire_top_xilinx import cheshire_pkg::*; #(
 `ifdef USE_JTAG_VDDGND
   output logic  jtag_vdd_o,
   output logic  jtag_gnd_o,
-  `endif
 `endif
+`endif // !USE_BSCANE2
+`endif // USE_JTAG
 
 `ifdef USE_I2C
   inout  wire   i2c_scl_io,
@@ -105,14 +107,20 @@ module cheshire_top_xilinx import cheshire_pkg::*; #(
   `DDR3_INTF
 `endif
 
-  output logic  uart_tx_o_cp2108,
-  output logic  uart_tx_o_gpio,
+  output logic  uart_tx_o_cp2108
+`ifdef USE_UART_GPIO
+  , output logic  uart_tx_o_gpio
+`endif
 
-  input  logic  uart_rx_i_cp2108,
-  input  logic  uart_rx_i_gpio, 
+  , input  logic  uart_rx_i_cp2108
+`ifdef USE_UART_GPIO
+  , input  logic  uart_rx_i_gpio
+`endif
 
-  inout  wire [UsbNumPorts-1:0] usb_dm_io,
-  inout  wire [UsbNumPorts-1:0] usb_dp_io
+`ifdef USE_USB
+  , inout  wire [UsbNumPorts-1:0] usb_dm_io
+  , inout  wire [UsbNumPorts-1:0] usb_dp_io
+`endif
 );
 
   ///////////////////////
@@ -228,12 +236,14 @@ module cheshire_top_xilinx import cheshire_pkg::*; #(
   assign vio_reset          = '0;
   assign vio_boot_mode      = '0;
   assign vio_boot_mode_sel  = '0;
-  assign vio_uart_sel  = '0;
+  assign vio_uart_sel  = '1; // Route CVA6 UART to CP2108 (J83 USB)
 `endif
 
-  assign uart_tx_o_cp2108 = vio_uart_sel ? uart_tx_o : '0;
-  assign uart_tx_o_gpio   = vio_uart_sel ? '0 : uart_tx_o;
-  assign uart_rx_i        = vio_uart_sel ? uart_rx_i_cp2108 : uart_rx_i_gpio;
+  assign uart_tx_o_cp2108 = uart_tx_o;
+`ifdef USE_UART_GPIO
+  assign uart_tx_o_gpio   = '0;
+`endif
+  assign uart_rx_i        = uart_rx_i_cp2108;
 
 `ifdef USE_RESET
   assign sys_rst = sys_reset | vio_reset;
@@ -267,6 +277,17 @@ module cheshire_top_xilinx import cheshire_pkg::*; #(
 `ifndef USE_JTAG_TRSTN
   logic jtag_trst_ni;
   assign jtag_trst_ni = 1'b1;
+`endif
+
+`ifdef USE_BSCANE2
+  // dmi_bscane_tap.sv (instantiated inside i_cheshire_soc via dmi_jtag.sv)
+  // owns two BSCANE2 primitives (chain3=DTMCS, chain4=DMI).  No top-level
+  // BSCANE2 instantiation is needed here.  Tie CVA6's JTAG pins to safe
+  // values; dmi_bscane_tap.sv ignores tck_i/tms_i/td_i/trst_ni.
+  logic jtag_tck_i, jtag_tms_i, jtag_tdi_i, jtag_tdo_o;
+  assign jtag_tck_i = 1'b0;
+  assign jtag_tms_i = 1'b1;  // TMS=1 holds JTAG TAP in Test-Logic-Reset
+  assign jtag_tdi_i = 1'b0;
 `endif
 
   //////////////////
@@ -466,12 +487,21 @@ module cheshire_top_xilinx import cheshire_pkg::*; #(
   logic [UsbNumPorts-1:0] usb_dp_o;
   logic [UsbNumPorts-1:0] usb_dp_oe_o;
 
+`ifdef USE_USB
   for (genvar i = 0; i < FPGACfg.Usb*UsbNumPorts; ++i) begin : gen_usb_tristate
     assign usb_dp_io [i] = usb_dp_oe_o[i] ? usb_dp_o[i] : 'z;
     assign usb_dp_i  [i] = usb_dp_io[i];
     assign usb_dm_io [i] = usb_dm_oe_o[i] ? usb_dm_o[i] : 'z;
     assign usb_dm_i  [i] = usb_dm_io[i];
   end
+`else
+  assign usb_dm_i    = '0;
+  assign usb_dm_o    = '0;
+  assign usb_dm_oe_o = '0;
+  assign usb_dp_i    = '0;
+  assign usb_dp_o    = '0;
+  assign usb_dp_oe_o = '0;
+`endif
 
   /////////////////////////
   // "RTC" Clock Divider //

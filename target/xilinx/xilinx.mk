@@ -47,12 +47,14 @@ $(CHS_XILINX_DIR)/build/%/out.xci: \
 # Bitstreams #
 ##############
 
-CHS_XILINX_BOARDS := genesys2 vcu128 vcu118 zcu102
+CHS_XILINX_BOARDS := genesys2 vcu128 vcu118 zcu102 zcu208
 
 CHS_XILINX_IPS_genesys2 := clkwiz vio mig7s
 CHS_XILINX_IPS_vcu128   := clkwiz vio ddr4
 CHS_XILINX_IPS_vcu118   := clkwiz vio ddr4
 CHS_XILINX_IPS_zcu102	:= clkwiz vio
+CHS_XILINX_IPS_zcu208	:= clkwiz vio
+# no ddr4 for the moment
 
 $(CHS_XILINX_DIR)/scripts/add_sources.%.tcl: $(CHS_ROOT)/Bender.yml $(CHS_XILINX_HW)
 	$(BENDER) script vivado -t fpga -t $* $(CHS_BENDER_RTL_FLAGS) > $@

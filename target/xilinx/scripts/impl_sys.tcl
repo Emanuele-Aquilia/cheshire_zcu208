@@ -22,6 +22,11 @@ import_files -fileset constrs_1 -norecurse ${xilinx_root}/constraints/${board}.x
 # Load RTL sources
 source ${xilinx_root}/scripts/add_sources.${board}.tcl
 
+# Keep GPIO UART ports on boards that map them.
+if { $board != "zcu208" } {
+    set_property verilog_define {USE_UART_GPIO} [current_fileset]
+}
+
 # Set top module
 set_property top ${proj}_top_xilinx [current_fileset]
 update_compile_order -fileset sources_1
@@ -34,6 +39,9 @@ set_property strategy Flow_PerfOptimized_high [get_runs synth_1]
 # Elaborate and open design to explore all clocks
 synth_design -rtl -name rtl_1
 report_clocks -file ${project_root}/clocks.rpt
+
+# Fail fast if any top-level ports are unconstrained.
+check_unconstrained_ports
 
 # Synthesis
 launch_runs -jobs $num_jobs synth_1

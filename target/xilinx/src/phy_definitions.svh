@@ -51,6 +51,14 @@
   `define USE_VIO
 `endif
 
+`ifdef TARGET_ZCU208
+  `define USE_RESET
+  `define USE_JTAG
+  `define USE_BSCANE2      // Route CVA6 JTAG through BSCANE2 USER4=0x23 (PS JTAG / J2 USB)
+  // `define USE_DDR4
+  `define USE_VIO
+`endif
+
 /////////////////////
 // DERIVED CONFIGS //
 /////////////////////

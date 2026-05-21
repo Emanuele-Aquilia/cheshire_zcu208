@@ -152,6 +152,33 @@ switch $proj {
                     CONFIG.CLKOUT4_REQUESTED_OUT_FREQ {10.000} \
                     ] [get_ips $proj]
             }
+            zcu208 {
+                set_property -dict [list \
+                    CONFIG.CLK_IN1_BOARD_INTERFACE {Custom} \
+                    CONFIG.RESET_BOARD_INTERFACE {Custom} \
+                    CONFIG.USE_RESET {true} \
+                    CONFIG.PRIM_SOURCE {No_Buffer} \
+                    CONFIG.PRIM_IN_FREQ {125.000} \
+                    CONFIG.CLKOUT1_USED {true} \
+                    CONFIG.CLKOUT2_USED {true} \
+                    CONFIG.CLKOUT3_USED {true} \
+                    CONFIG.CLKOUT4_USED {true} \
+                    CONFIG.CLK_OUT1_PORT {clk_50} \
+                    CONFIG.CLK_OUT2_PORT {clk_48} \
+                    CONFIG.CLK_OUT3_PORT {clk_20} \
+                    CONFIG.CLK_OUT4_PORT {clk_10} \
+                    CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {50.000} \
+                    CONFIG.CLKOUT1_JITTER {116.415} \
+                    CONFIG.CLKOUT1_PHASE_ERROR {77.836} \
+                    CONFIG.CLKOUT2_JITTER {117.369} \
+                    CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {48.000} \
+                    CONFIG.CLKOUT3_JITTER {140.023} \
+                    CONFIG.CLKOUT3_REQUESTED_OUT_FREQ {20.000} \
+                    CONFIG.CLKOUT4_JITTER {160.570} \
+                    CONFIG.CLKOUT4_PHASE_ERROR {77.836} \
+                    CONFIG.CLKOUT4_REQUESTED_OUT_FREQ {10.000} \
+                    ] [get_ips $proj]
+            }
             default { nocfgexit $proj $board }
         }
     }
@@ -183,6 +210,18 @@ switch $proj {
                     ] [get_ips $proj]
             }
             zcu102 {
+                set_property -dict [list \
+                    CONFIG.C_NUM_PROBE_OUT {4} \
+                    CONFIG.C_PROBE_OUT0_INIT_VAL {0x0} \
+                    CONFIG.C_PROBE_OUT1_INIT_VAL {0x2} \
+                    CONFIG.C_PROBE_OUT2_INIT_VAL {0x1} \
+                    CONFIG.C_PROBE_OUT3_INIT_VAL {0x0} \
+                    CONFIG.C_PROBE_OUT1_WIDTH {2} \
+                    CONFIG.C_EN_PROBE_IN_ACTIVITY {0} \
+                    CONFIG.C_NUM_PROBE_IN {0} \
+                    ] [get_ips $proj]
+            }
+            zcu208 {
                 set_property -dict [list \
                     CONFIG.C_NUM_PROBE_OUT {4} \
                     CONFIG.C_PROBE_OUT0_INIT_VAL {0x0} \
