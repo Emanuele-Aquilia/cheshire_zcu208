@@ -32,21 +32,21 @@ set_property CLOCK_BUFFER_TYPE NONE $all_in_mux
 # 10 MHz (max) JTAG clock
 set JTAG_TCK 100.0
 
-# JTAG Clock
-create_clock -period $JTAG_TCK -name clk_jtag [get_ports jtag_tck_i]
-set_input_jitter clk_jtag 1.000
+# JTAG Clock (External ports only, quiet if missing)
+create_clock -period $JTAG_TCK -name clk_jtag [get_ports -quiet jtag_tck_i]
+set_input_jitter [get_clocks -quiet clk_jtag] 1.000
 
 # JTAG Clock is asynchronous to all other clocks
-set_clock_groups -name jtag_async -asynchronous -group {clk_jtag}
+set_clock_groups -name jtag_async -asynchronous -group [get_clocks -quiet clk_jtag]
 
-set_input_delay -min -clock clk_jtag [expr { 0.10 * $JTAG_TCK }] [get_ports {jtag_tdi_i jtag_tms_i}]
-set_input_delay -max -clock clk_jtag [expr { 0.20 * $JTAG_TCK }] [get_ports {jtag_tdi_i jtag_tms_i}]
+set_input_delay -min -clock [get_clocks -quiet clk_jtag] [expr { 0.10 * $JTAG_TCK }] [get_ports -quiet {jtag_tdi_i jtag_tms_i}]
+set_input_delay -max -clock [get_clocks -quiet clk_jtag] [expr { 0.20 * $JTAG_TCK }] [get_ports -quiet {jtag_tdi_i jtag_tms_i}]
 
-set_output_delay -min -clock clk_jtag [expr { 0.10 * $JTAG_TCK }] [get_ports jtag_tdo_o]
-set_output_delay -max -clock clk_jtag [expr { 0.20 * $JTAG_TCK }] [get_ports jtag_tdo_o]
+set_output_delay -min -clock [get_clocks -quiet clk_jtag] [expr { 0.10 * $JTAG_TCK }] [get_ports -quiet jtag_tdo_o]
+set_output_delay -max -clock [get_clocks -quiet clk_jtag] [expr { 0.20 * $JTAG_TCK }] [get_ports -quiet jtag_tdo_o]
 
-set_max_delay -from [get_ports jtag_trst_ni] $JTAG_TCK
-set_false_path -hold -from [get_ports jtag_trst_ni]
+set_max_delay -from [get_ports -quiet jtag_trst_ni] $JTAG_TCK
+set_false_path -hold -from [get_ports -quiet jtag_trst_ni]
 
 ########
 # UART #
@@ -55,11 +55,11 @@ set_false_path -hold -from [get_ports jtag_trst_ni]
 # UART speed is at most 5 Mb/s
 set UART_IO_SPEED 200.0
 
-set_max_delay [expr { $UART_IO_SPEED * 0.35 }] -from [get_ports uart_rx_i]
-set_false_path -hold -from [get_ports uart_rx_i]
+set_max_delay [expr { $UART_IO_SPEED * 0.35 }] -from [get_ports -quiet uart_rx_i]
+set_false_path -hold -from [get_ports -quiet uart_rx_i]
 
-set_max_delay [expr { $UART_IO_SPEED * 0.35 }] -to [get_ports uart_tx_o]
-set_false_path -hold -to [get_ports uart_tx_o]
+set_max_delay [expr { $UART_IO_SPEED * 0.35 }] -to [get_ports -quiet uart_tx_o]
+set_false_path -hold -to [get_ports -quiet uart_tx_o]
 
 ########
 # CDCs #
@@ -80,5 +80,5 @@ set_false_path -hold -through [get_pins -of_objects [get_cells -hier \
 # QSPI #
 ########
 
-# Configuring QSPI to load bitstream faster
-set_property BITSTREAM.CONFIG.SPI_BUSWIDTH 4 [current_design]
+# Configuring QSPI to load bitstream faster (standard FPGAs only)
+# set_property BITSTREAM.CONFIG.SPI_BUSWIDTH 4 [current_design]

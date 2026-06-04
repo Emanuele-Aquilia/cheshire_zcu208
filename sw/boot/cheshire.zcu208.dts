@@ -1,0 +1,24 @@
+// Copyright 2024 ETH Zurich and University of Bologna.
+// Solderpad Hardware License, Version 0.51, see LICENSE for details.
+// SPDX-License-Identifier: SHL-0.51
+//
+// Cyril Koenig <cykoenig@iis.ee.ethz.ch>
+
+/include/ "cheshire.dtsi"
+
+/ {
+  memory@80000000 {
+    device_type = "memory";
+    reg = <0x0 0x80000000 0x1 0x00000000>; // 4GB
+  };
+};
+
+&spi {
+  boot-with = <1>; // 1 for QSPI Flash (CS1)
+  nor@1 {
+    compatible = "mt25qu01g", "jedec,spi-nor";
+    reg = <0x1>; // CS1
+    spi-max-frequency = <25000000>;
+    disable-wp;
+  };
+};

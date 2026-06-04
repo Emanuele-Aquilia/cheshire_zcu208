@@ -53,7 +53,7 @@ CHS_XILINX_IPS_genesys2 := clkwiz vio mig7s
 CHS_XILINX_IPS_vcu128   := clkwiz vio ddr4
 CHS_XILINX_IPS_vcu118   := clkwiz vio ddr4
 CHS_XILINX_IPS_zcu102	:= clkwiz vio
-CHS_XILINX_IPS_zcu208	:= clkwiz vio
+CHS_XILINX_IPS_zcu208	:= clkwiz vio ddr4 
 # no ddr4 for the moment
 
 $(CHS_XILINX_DIR)/scripts/add_sources.%.tcl: $(CHS_ROOT)/Bender.yml $(CHS_XILINX_HW)

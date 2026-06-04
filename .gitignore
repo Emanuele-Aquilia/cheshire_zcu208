@@ -57,3 +57,12 @@ vivado*
 .Xil
 *.mif
 hs_err*
+
+xilinx-zcu208-v2023.2*
+.venv/
+venv/
+log_build*
+GEMINI*
+gemini*
+ug1410*
+ZCU208_PORTING*

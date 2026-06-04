@@ -55,9 +55,13 @@
   `define USE_RESET
   `define USE_JTAG
   `define USE_BSCANE2      // Route CVA6 JTAG through BSCANE2 USER4=0x23 (PS JTAG / J2 USB)
-  // `define USE_DDR4
+  `define USE_DDR4
+  `define USE_QSPI
+  `define USE_STARTUPE3
+  `define USE_SWITCHES
   `define USE_VIO
 `endif
+
 
 /////////////////////
 // DERIVED CONFIGS //
@@ -89,7 +93,7 @@
   output                       c0_ddr4_act_n, \
   output [16:0]                c0_ddr4_adr, \
   output [1:0]                 c0_ddr4_ba, \
-  output [0:0]                 c0_ddr4_bg, \
+  output [1:0]                 c0_ddr4_bg, \
   output [0:0]                 c0_ddr4_cke, \
   output [0:0]                 c0_ddr4_odt, \
   output [Ddr4CsNWidth-1:0]    c0_ddr4_cs_n, \

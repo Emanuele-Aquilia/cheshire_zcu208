@@ -20,6 +20,11 @@ module cheshire_top_xilinx import cheshire_pkg::*; #(
   localparam int unsigned Ddr4DmDbiNWidth = 9,
   localparam int unsigned Ddr4DqWidth = 72,
   localparam int unsigned Ddr4DqsWidth = 9
+`elsif TARGET_ZCU208
+  localparam int unsigned Ddr4CsNWidth = 1,
+  localparam int unsigned Ddr4DmDbiNWidth = 4,
+  localparam int unsigned Ddr4DqWidth = 32,
+  localparam int unsigned Ddr4DqsWidth = 4
 `else // Default to VCU118
   localparam int unsigned Ddr4CsNWidth = 1,
   localparam int unsigned Ddr4DmDbiNWidth = 8,
@@ -27,8 +32,8 @@ module cheshire_top_xilinx import cheshire_pkg::*; #(
   localparam int unsigned Ddr4DqsWidth = 8
 `endif
 )(
-  input  logic  sys_clk_p,
-  input  logic  sys_clk_n,
+  input  logic  c0_sys_clk_p,
+  input  logic  c0_sys_clk_n,
 
 `ifdef USE_RESET
   input  logic  sys_reset,
@@ -107,13 +112,12 @@ module cheshire_top_xilinx import cheshire_pkg::*; #(
   `DDR3_INTF
 `endif
 
-  output logic  uart_tx_o_cp2108
+  output logic  uart_tx_o_ftdi,
+  input  logic  uart_rx_i_ftdi
+  // input  logic  uart_cts_ni_ftdi,
+  // output logic  uart_rts_no_ftdi
 `ifdef USE_UART_GPIO
   , output logic  uart_tx_o_gpio
-`endif
-
-  , input  logic  uart_rx_i_cp2108
-`ifdef USE_UART_GPIO
   , input  logic  uart_rx_i_gpio
 `endif
 
@@ -173,18 +177,23 @@ module cheshire_top_xilinx import cheshire_pkg::*; #(
   wire soc_clk;
   wire usb_clk;
 
+`ifndef USE_DDR4
   IBUFDS #(
     .IBUF_LOW_PWR ("FALSE")
   ) i_bufds_sys_clk (
-    .I  ( sys_clk_p ),
-    .IB ( sys_clk_n ),
+    .I  ( c0_sys_clk_p ),
+    .IB ( c0_sys_clk_n ),
     .O  ( sys_clk   )
   );
+`else
+  wire dram_clk_o;
+  assign sys_clk = dram_clk_o;
+`endif
 
   clkwiz i_clkwiz (
     .clk_in1  ( sys_clk ),
-    // .CLK_IN1_D_clk_p (sys_clk_p),
-    // .CLK_IN1_D_clk_n (sys_clk_n),
+    // .CLK_IN1_D_clk_p (c0_sys_clk_p),
+    // .CLK_IN1_D_clk_n (c0_sys_clk_n),
     .reset    ( '0 ),
     .locked   ( ),
     .clk_50   ( soc_clk ),
@@ -239,11 +248,12 @@ module cheshire_top_xilinx import cheshire_pkg::*; #(
   assign vio_uart_sel  = '1; // Route CVA6 UART to CP2108 (J83 USB)
 `endif
 
-  assign uart_tx_o_cp2108 = uart_tx_o;
+  assign uart_tx_o_ftdi = uart_tx_o;
+  // assign uart_rts_no_ftdi = 1'b0; // Active low, always ready
+  assign uart_rx_i = uart_rx_i_ftdi;
 `ifdef USE_UART_GPIO
   assign uart_tx_o_gpio   = '0;
 `endif
-  assign uart_rx_i        = uart_rx_i_cp2108;
 
 `ifdef USE_RESET
   assign sys_rst = sys_reset | vio_reset;
@@ -611,7 +621,10 @@ module cheshire_top_xilinx import cheshire_pkg::*; #(
     .sys_rst_i    ( sys_rst ),
     .soc_resetn_i ( rst_n   ),
     .soc_clk_i    ( soc_clk ),
-    .dram_clk_i   ( sys_clk ),
+    .dram_clk_i   ( 1'b0      ),
+    .sys_clk_p_i  ( c0_sys_clk_p ),
+    .sys_clk_n_i  ( c0_sys_clk_n ),
+    .dram_clk_o   ( dram_clk_o),
     .soc_req_i    ( axi_dram_mst_req ),
     .soc_rsp_o    ( axi_dram_mst_rsp ),
     .*

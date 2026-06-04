@@ -80,3 +80,19 @@ static inline void *gprw(void *gp) {
     if (!(cond)) return (ret);
 
 #define MIN(a, b) (((a) <= (b)) ? (a) : (b))
+
+#ifndef BIT
+#define BIT(x) (1UL << (x))
+#endif
+
+#ifndef BIT_MASK
+#define BIT_MASK(x) ((1UL << (x)) - 1)
+#endif
+
+#include "regs/cheshire.h"
+#include "params.h"
+
+static inline int chs_hw_feature_present(uint32_t feature_bit) {
+    uint32_t features = *reg32(&__base_regs, CHESHIRE_HW_FEATURES_REG_OFFSET);
+    return (features >> feature_bit) & 1;
+}

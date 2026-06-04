@@ -28,6 +28,11 @@ module dram_wrapper_xilinx #(
   // System reset
   input  logic  sys_rst_i,
   input  logic  dram_clk_i,
+`ifdef USE_DDR4
+  input  logic  sys_clk_p_i,
+  input  logic  sys_clk_n_i,
+  output logic  dram_clk_o,
+`endif
   // Controller reset
   input  logic  soc_resetn_i,
   input  logic  soc_clk_i,
@@ -94,6 +99,19 @@ module dram_wrapper_xilinx #(
     StrobeWidth   : 8,
     MaxUniqIds    : 8,    // TODO: suboptimal, but limited by CVA6/LLC
     MaxTxns       : 24    // TODO: suboptimal, but limited by CVA6/LLC
+  };
+`endif
+
+`ifdef TARGET_ZCU208
+  localparam dram_cfg_t cfg = '{
+    EnCdc         : 1,
+    CdcLogDepth   : 5,
+    IdWidth       : 8,
+    AddrWidth     : 32,
+    DataWidth     : 256,
+    StrobeWidth   : 32,
+    MaxUniqIds    : 8,
+    MaxTxns       : 24
   };
 `endif
 
@@ -244,7 +262,8 @@ module dram_wrapper_xilinx #(
   ddr4 i_dram (
     // Reset
     .sys_rst                    ( sys_rst_i    ),  // Active high
-    .c0_sys_clk_i               ( dram_clk_i   ),
+    .c0_sys_clk_p               ( sys_clk_p_i  ),
+    .c0_sys_clk_n               ( sys_clk_n_i  ),
     .c0_ddr4_aresetn            ( soc_resetn_i ),
     // Clock and reset out
     .c0_ddr4_ui_clk             ( dram_axi_clk ),
