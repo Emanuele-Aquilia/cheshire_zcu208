@@ -158,7 +158,7 @@ switch $proj {
                     CONFIG.RESET_BOARD_INTERFACE {Custom} \
                     CONFIG.USE_RESET {true} \
                     CONFIG.PRIM_SOURCE {No_Buffer} \
-                    CONFIG.PRIM_IN_FREQ {100.000} \
+                    CONFIG.PRIM_IN_FREQ {300.000} \
                     CONFIG.CLKOUT1_USED {true} \
                     CONFIG.CLKOUT2_USED {true} \
                     CONFIG.CLKOUT3_USED {true} \
@@ -172,8 +172,8 @@ switch $proj {
                     CONFIG.CLKOUT3_REQUESTED_OUT_FREQ {20.000} \
                     CONFIG.CLKOUT4_REQUESTED_OUT_FREQ {10.000} \
                     CONFIG.MMCM_DIVCLK_DIVIDE {1} \
-                    CONFIG.MMCM_CLKFBOUT_MULT_F {12.000} \
-                    CONFIG.MMCM_CLKIN1_PERIOD {10.000} \
+                    CONFIG.MMCM_CLKFBOUT_MULT_F {4.000} \
+                    CONFIG.MMCM_CLKIN1_PERIOD {3.333} \
                     CONFIG.MMCM_CLKOUT0_DIVIDE_F {24.000} \
                     CONFIG.MMCM_CLKOUT1_DIVIDE {25} \
                     CONFIG.MMCM_CLKOUT2_DIVIDE {60} \
@@ -304,18 +304,14 @@ switch $proj {
             }
             zcu208 {
                 set_property -dict [list \
+                    CONFIG.C0_DDR4_BOARD_INTERFACE {ddr4_sdram_c0} \
+                    CONFIG.C0_CLOCK_BOARD_INTERFACE {default_sysclk_c0_300mhz} \
+                    CONFIG.RESET_BOARD_INTERFACE {reset} \
                     CONFIG.System_Clock {Differential} \
                     CONFIG.Reference_Clock {Differential} \
-                    CONFIG.C0.DDR4_InputClockPeriod {3334} \
-                    CONFIG.C0.DDR4_TimePeriod {750} \
-                    CONFIG.C0.DDR4_CLKOUT0_DIVIDE {5} \
-                    CONFIG.C0.DDR4_MemoryPart {MT40A1G8SA-075} \
-                    CONFIG.C0.DDR4_DataWidth {32} \
-                    CONFIG.C0.DDR4_DataMask {DM_NO_DBI} \
                     CONFIG.C0.DDR4_AxiDataWidth {256} \
                     CONFIG.C0.DDR4_AxiAddressWidth {32} \
                     CONFIG.C0.DDR4_AxiIDWidth {8} \
-                    CONFIG.C0.BANK_GROUP_WIDTH {2} \
                     CONFIG.C0.DDR4_AxiSelection {true} \
                     CONFIG.ADDN_UI_CLKOUT1_FREQ_HZ {100} \
                     ] [get_ips $proj]

@@ -21,7 +21,7 @@ module cheshire_top_xilinx import cheshire_pkg::*; #(
   localparam int unsigned Ddr4DqWidth = 72,
   localparam int unsigned Ddr4DqsWidth = 9
 `elsif TARGET_ZCU208
-  localparam int unsigned Ddr4CsNWidth = 1,
+  localparam int unsigned Ddr4CsNWidth = 2,
   localparam int unsigned Ddr4DmDbiNWidth = 4,
   localparam int unsigned Ddr4DqWidth = 32,
   localparam int unsigned Ddr4DqsWidth = 4
@@ -406,10 +406,10 @@ module cheshire_top_xilinx import cheshire_pkg::*; #(
   ) i_startupe3 (
     .CFGCLK     ( ),
     .CFGMCLK    ( ),
-    .DI         ( qspi_dqi ),
+    .DI         ( qspi_dqo ),
     .EOS        ( ),
     .PREQ       ( ),
-    .DO         ( qspi_dqo ),
+    .DO         ( qspi_dqi ),
     .DTS        ( qspi_dqo_ts ),
     .FCSBO      ( qspi_cs_b[1] ),
     .FCSBTS     ( qspi_cs_b_ts[1] ),

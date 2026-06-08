@@ -85,6 +85,10 @@ static inline int __spi_s25fs512s_single_flash_page(spi_s25fs512s_t *handle, voi
                                                     uint64_t page) {
     // Erase two 256B sectors, equal to one 512B page
     for (int i = 0; i < 2; ++i) {
+        // Must send WREN before every erase
+        dif_spi_host_segment_t wren = {kDifSpiHostSegmentTypeOpcode, {.opcode = 0x06}};
+        CHECK_CALL(dif_spi_host_transaction(&handle->spi_host, handle->csid, &wren, 1))
+
         dif_spi_host_segment_t segs[] = {{kDifSpiHostSegmentTypeOpcode, {.opcode = 0xDC}},
                                          {kDifSpiHostSegmentTypeAddress,
                                           {.address = {.width = kDifSpiHostWidthStandard,
@@ -95,6 +99,10 @@ static inline int __spi_s25fs512s_single_flash_page(spi_s25fs512s_t *handle, voi
         CHECK_CALL(__spi_s25fs512s_poll_wip(handle))
     }
     // Program one 512B page with provided data at single speed
+    // Must send WREN before every program
+    dif_spi_host_segment_t wren = {kDifSpiHostSegmentTypeOpcode, {.opcode = 0x06}};
+    CHECK_CALL(dif_spi_host_transaction(&handle->spi_host, handle->csid, &wren, 1))
+
     dif_spi_host_segment_t segs[] = {
         {kDifSpiHostSegmentTypeOpcode, {.opcode = 0x12}},
         {kDifSpiHostSegmentTypeAddress,
@@ -104,7 +112,7 @@ static inline int __spi_s25fs512s_single_flash_page(spi_s25fs512s_t *handle, voi
         {kDifSpiHostSegmentTypeRx,
          {.rx = {.width = kDifSpiHostWidthStandard, .buf = buf, .length = 512}}}};
     CHECK_CALL(dif_spi_host_transaction(&handle->spi_host, handle->csid, segs, 3))
-    // Poll WIP until erase is complete
+    // Poll WIP until program is complete
     CHECK_CALL(__spi_s25fs512s_poll_wip(handle))
     // Nothing went wrong
     return 0;
@@ -115,9 +123,6 @@ int spi_s25fs512s_single_flash(void *priv, void *buf, uint64_t page, uint64_t nu
     spi_s25fs512s_t *handle = (spi_s25fs512s_t *)priv;
     // Top speed for the used commands is 100 MHz
     CHECK_ASSERT(0x16, handle->spi_freq < 100 * 1000 * 1000)
-    // Ensure write enable (WREN) control register is set
-    dif_spi_host_segment_t wren = {kDifSpiHostSegmentTypeOpcode, {.opcode = 0x06}};
-    CHECK_CALL(dif_spi_host_transaction(&handle->spi_host, handle->csid, &wren, 1))
     // Flash the requested pages
     for (uint64_t p = 0; p < num_pages; ++p) {
         CHECK_CALL(__spi_s25fs512s_single_flash_page(handle, buf + (p << 9), page + p));

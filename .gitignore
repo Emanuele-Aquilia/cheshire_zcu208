@@ -51,18 +51,16 @@ target/sim/vcs/vc_hdrs.h
 # Xilinx generated files
 target/xilinx/build
 target/xilinx/out
-target/xilinx/scripts/add_sources.*
+#target/xilinx/scripts/add_sources.* this line is commented because we substitute the bscane tap by hand
 vivado*
 
 .Xil
 *.mif
 hs_err*
 
-xilinx-zcu208-v2023.2*
+xilinx-zcu208-v2023.2-10140544
 .venv/
 venv/
 log_build*
-GEMINI*
-gemini*
-ug1410*
-ZCU208_PORTING*
+_gemini_workspace/
+thesis/

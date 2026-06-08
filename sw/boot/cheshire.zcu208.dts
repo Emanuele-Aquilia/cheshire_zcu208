@@ -7,14 +7,29 @@
 /include/ "cheshire.dtsi"
 
 / {
+  chosen {
+    bootargs = "earlycon=sbi console=ttyS0,115200n8 debug loglevel=7";
+  };
+
   memory@80000000 {
     device_type = "memory";
     reg = <0x0 0x80000000 0x1 0x00000000>; // 4GB
   };
 };
 
+&PLIC0 {
+  compatible = "sifive,plic-1.0.0", "riscv,plic0";
+  riscv,ndev = <58>;
+};
+
+&soc {
+  serial@3002000 {
+    interrupts = <2>;
+  };
+};
+
 &spi {
-  boot-with = <1>; // 1 for QSPI Flash (CS1)
+  boot-with = <2>; // 2 for SD Card (CS0)
   nor@1 {
     compatible = "mt25qu01g", "jedec,spi-nor";
     reg = <0x1>; // CS1

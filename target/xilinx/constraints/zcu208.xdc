@@ -1,3 +1,8 @@
+# Copyright 2026 Emanuele Aquilia <s337181@studenti.polito.it>
+# Copyright 2022 ETH Zurich and University of Bologna.
+# Licensed under the Apache License, Version 2.0, see LICENSE for details.
+# SPDX-License-Identifier: Apache-2.0
+
 #######################################################
 ##                                                   ##
 ## ZCU208 Master XDC                                 ##
@@ -1121,9 +1126,8 @@ set_property -dict {PACKAGE_PIN L14 IOSTANDARD LVCMOS12} [get_ports {boot_mode_i
 set_property -dict {PACKAGE_PIN AF15 IOSTANDARD LVCMOS18} [get_ports test_mode_i]
 
 ######################################################################
-# CPU Reset mapping
+# CPU Reset mapping (Handled by Board Preset)
 ######################################################################
-set_property -dict {PACKAGE_PIN AU1 IOSTANDARD LVCMOS18} [get_ports sys_reset]
 
 ######################################################################
 # UART mapping (FTDI Port C - UART2, bank 65, VCCO 1V2)
@@ -1139,102 +1143,25 @@ set_property -dict {PACKAGE_PIN AT9  IOSTANDARD LVCMOS12} [get_ports uart_tx_o_f
 # STARTUPE3 uses dedicated configuration pins on UltraScale+.
 
 ######################################################################
-# DDR4 C0 Interface (Verified 32-bit Mapping)
+# CPU Reset mapping
 ######################################################################
-# Control & Reset
-set_property -dict {PACKAGE_PIN AF20 IOSTANDARD LVCMOS12} [get_ports c0_ddr4_reset_n]
-set_property -dict {PACKAGE_PIN AM20 IOSTANDARD DIFF_SSTL12_DCI} [get_ports {c0_ddr4_ck_t[0]}]
-set_property -dict {PACKAGE_PIN AN20 IOSTANDARD DIFF_SSTL12_DCI} [get_ports {c0_ddr4_ck_c[0]}]
-set_property -dict {PACKAGE_PIN AK21 IOSTANDARD SSTL12_DCI} [get_ports c0_ddr4_act_n]
-set_property -dict {PACKAGE_PIN AG18 IOSTANDARD SSTL12_DCI} [get_ports {c0_ddr4_cs_n[0]}]
-set_property -dict {PACKAGE_PIN AF19 IOSTANDARD SSTL12_DCI} [get_ports {c0_ddr4_cke[0]}]
-set_property -dict {PACKAGE_PIN AK22 IOSTANDARD SSTL12_DCI} [get_ports {c0_ddr4_odt[0]}]
-set_property -dict {PACKAGE_PIN AJ19 IOSTANDARD SSTL12_DCI} [get_ports {c0_ddr4_bg[0]}]
-set_property -dict {PACKAGE_PIN AJ20 IOSTANDARD SSTL12_DCI} [get_ports {c0_ddr4_bg[1]}]
-set_property -dict {PACKAGE_PIN AT22 IOSTANDARD SSTL12_DCI} [get_ports {c0_ddr4_ba[0]}]
-set_property -dict {PACKAGE_PIN AR22 IOSTANDARD SSTL12_DCI} [get_ports {c0_ddr4_ba[1]}]
-
-# Address Pins
-set_property -dict {PACKAGE_PIN AJ18 IOSTANDARD SSTL12_DCI} [get_ports {c0_ddr4_adr[0]}]
-set_property -dict {PACKAGE_PIN AN22 IOSTANDARD SSTL12_DCI} [get_ports {c0_ddr4_adr[1]}]
-set_property -dict {PACKAGE_PIN AL20 IOSTANDARD SSTL12_DCI} [get_ports {c0_ddr4_adr[2]}]
-set_property -dict {PACKAGE_PIN AL21 IOSTANDARD SSTL12_DCI} [get_ports {c0_ddr4_adr[3]}]
-set_property -dict {PACKAGE_PIN AM19 IOSTANDARD SSTL12_DCI} [get_ports {c0_ddr4_adr[4]}]
-set_property -dict {PACKAGE_PIN AL19 IOSTANDARD SSTL12_DCI} [get_ports {c0_ddr4_adr[5]}]
-set_property -dict {PACKAGE_PIN AM22 IOSTANDARD SSTL12_DCI} [get_ports {c0_ddr4_adr[6]}]
-set_property -dict {PACKAGE_PIN AL22 IOSTANDARD SSTL12_DCI} [get_ports {c0_ddr4_adr[7]}]
-set_property -dict {PACKAGE_PIN AN18 IOSTANDARD SSTL12_DCI} [get_ports {c0_ddr4_adr[8]}]
-set_property -dict {PACKAGE_PIN AM18 IOSTANDARD SSTL12_DCI} [get_ports {c0_ddr4_adr[9]}]
-set_property -dict {PACKAGE_PIN AP21 IOSTANDARD SSTL12_DCI} [get_ports {c0_ddr4_adr[10]}]
-set_property -dict {PACKAGE_PIN AN21 IOSTANDARD SSTL12_DCI} [get_ports {c0_ddr4_adr[11]}]
-set_property -dict {PACKAGE_PIN AT21 IOSTANDARD SSTL12_DCI} [get_ports {c0_ddr4_adr[12]}]
-set_property -dict {PACKAGE_PIN AR21 IOSTANDARD SSTL12_DCI} [get_ports {c0_ddr4_adr[13]}]
-set_property -dict {PACKAGE_PIN AH20 IOSTANDARD SSTL12_DCI} [get_ports {c0_ddr4_adr[14]}]
-set_property -dict {PACKAGE_PIN AH18 IOSTANDARD SSTL12_DCI} [get_ports {c0_ddr4_adr[15]}]
-set_property -dict {PACKAGE_PIN AK18 IOSTANDARD SSTL12_DCI} [get_ports {c0_ddr4_adr[16]}]
-
-# Data Byte 0
-set_property -dict {PACKAGE_PIN AR11 IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[0]}]
-set_property -dict {PACKAGE_PIN AN11 IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[1]}]
-set_property -dict {PACKAGE_PIN AP11 IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[2]}]
-set_property -dict {PACKAGE_PIN AN10 IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[3]}]
-set_property -dict {PACKAGE_PIN AP10 IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[4]}]
-set_property -dict {PACKAGE_PIN AL10 IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[5]}]
-set_property -dict {PACKAGE_PIN AR12 IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[6]}]
-set_property -dict {PACKAGE_PIN AM10 IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[7]}]
-set_property -dict {PACKAGE_PIN AM13 IOSTANDARD DIFF_POD12_DCI} [get_ports {c0_ddr4_dqs_t[0]}]
-set_property -dict {PACKAGE_PIN AN13 IOSTANDARD DIFF_POD12_DCI} [get_ports {c0_ddr4_dqs_c[0]}]
-set_property -dict {PACKAGE_PIN AM12 IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dm_dbi_n[0]}]
-
-# Data Byte 1
-set_property -dict {PACKAGE_PIN AT10 IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[8]}]
-set_property -dict {PACKAGE_PIN AV11 IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[9]}]
-set_property -dict {PACKAGE_PIN AW9  IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[10]}]
-set_property -dict {PACKAGE_PIN AW11 IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[11]}]
-set_property -dict {PACKAGE_PIN AW8  IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[12]}]
-set_property -dict {PACKAGE_PIN AV12 IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[13]}]
-set_property -dict {PACKAGE_PIN AU10 IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[14]}]
-set_property -dict {PACKAGE_PIN AU12 IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[15]}]
-set_property -dict {PACKAGE_PIN AT12 IOSTANDARD DIFF_POD12_DCI} [get_ports {c0_ddr4_dqs_t[1]}]
-set_property -dict {PACKAGE_PIN AT11 IOSTANDARD DIFF_POD12_DCI} [get_ports {c0_ddr4_dqs_c[1]}]
-set_property -dict {PACKAGE_PIN AV10 IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dm_dbi_n[1]}]
-
-# Data Byte 2
-set_property -dict {PACKAGE_PIN AJ13 IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[16]}]
-set_property -dict {PACKAGE_PIN AK12 IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[17]}]
-set_property -dict {PACKAGE_PIN AL14 IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[18]}]
-set_property -dict {PACKAGE_PIN AJ12 IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[19]}]
-set_property -dict {PACKAGE_PIN AH13 IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[20]}]
-set_property -dict {PACKAGE_PIN AH12 IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[21]}]
-set_property -dict {PACKAGE_PIN AM14 IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[22]}]
-set_property -dict {PACKAGE_PIN AG12 IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[23]}]
-set_property -dict {PACKAGE_PIN AJ14 IOSTANDARD DIFF_POD12_DCI} [get_ports {c0_ddr4_dqs_t[2]}]
-set_property -dict {PACKAGE_PIN AK14 IOSTANDARD DIFF_POD12_DCI} [get_ports {c0_ddr4_dqs_c[2]}]
-set_property -dict {PACKAGE_PIN AK13 IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dm_dbi_n[2]}]
-
-# Data Byte 3
-set_property -dict {PACKAGE_PIN AM9  IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[24]}]
-set_property -dict {PACKAGE_PIN AM7  IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[25]}]
-set_property -dict {PACKAGE_PIN AP9  IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[26]}]
-set_property -dict {PACKAGE_PIN AM8  IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[27]}]
-set_property -dict {PACKAGE_PIN AL9  IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[28]}]
-set_property -dict {PACKAGE_PIN AL7  IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[29]}]
-set_property -dict {PACKAGE_PIN AR9  IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[30]}]
-set_property -dict {PACKAGE_PIN AL8  IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dq[31]}]
-set_property -dict {PACKAGE_PIN AN8  IOSTANDARD DIFF_POD12_DCI} [get_ports {c0_ddr4_dqs_t[3]}]
-set_property -dict {PACKAGE_PIN AN7  IOSTANDARD DIFF_POD12_DCI} [get_ports {c0_ddr4_dqs_c[3]}]
-set_property -dict {PACKAGE_PIN AP8  IOSTANDARD POD12_DCI} [get_ports {c0_ddr4_dm_dbi_n[3]}]
-
+set_property -dict {PACKAGE_PIN AU1 IOSTANDARD LVCMOS18} [get_ports sys_reset]
 
 ######################################################################
-# System Clock mapping
+# DDR4 C0 Interface (Linked to Board Preset)
 ######################################################################
-# Use USER_SI570_C0 pins in Bank 66 to match MIG column
-set_property -dict {PACKAGE_PIN AP20 IOSTANDARD DIFF_SSTL12} [get_ports c0_sys_clk_p]
-set_property -dict {PACKAGE_PIN AP19 IOSTANDARD DIFF_SSTL12} [get_ports c0_sys_clk_n]
+
+######################################################################
+# System Clock mapping (Handled by Board Preset)
+######################################################################
+set_property BOARD_PART_PIN default_sysclk_c0_300mhz_clk_n [get_ports c0_sys_clk_n]
+set_property BOARD_PART_PIN default_sysclk_c0_300mhz_clk_p [get_ports c0_sys_clk_p]
+set_property IOSTANDARD DIFF_SSTL12_DCI [get_ports c0_sys_clk_n]
+set_property IOSTANDARD DIFF_SSTL12_DCI [get_ports c0_sys_clk_p]
 
 set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets c0_sys_clk_n]
 set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets c0_sys_clk_p]
+
 
 # JTAG clock (BSCANE2)
 # Both i_tap_dtmcs and i_tap_dmi are driven by the same TCK from the FPGA TAP.

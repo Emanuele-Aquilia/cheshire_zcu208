@@ -606,7 +606,7 @@ package cheshire_pkg;
     LlcAmoPostCut     : 1,
     LlcOutConnect     : 1,
     LlcOutRegionStart : 'h8000_0000,
-    LlcOutRegionEnd   : 64'h1_0000_0000,
+    LlcOutRegionEnd   : 64'h1_8000_0000,
     // VGA: RGB565
     VgaRedWidth       : 5,
     VgaGreenWidth     : 6,

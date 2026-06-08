@@ -130,7 +130,8 @@ proc check_unconstrained_ports {} {
             lappend missing_io $port
         }
         set pin [get_property PACKAGE_PIN $port]
-        if { $pin eq "" } {
+        set bpin [get_property BOARD_PART_PIN $port]
+        if { $pin eq "" && $bpin eq "" } {
             lappend missing_pin $port
         }
     }
