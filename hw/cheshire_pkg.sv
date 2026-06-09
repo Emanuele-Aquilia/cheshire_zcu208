@@ -493,6 +493,8 @@ package cheshire_pkg;
     // Base our config on the upstream default for this variant
     config_pkg::cva6_user_cfg_t ret = cva6_config_pkg::cva6_cfg;
     // Modify what we need to
+    ret.RVB                   = 1;
+    ret.RVZiCbom              = 1;
     ret.AxiAddrWidth          = cfg.AddrWidth;
     ret.AxiDataWidth          = cfg.AxiDataWidth;
     ret.AxiIdWidth            = Cva6IdWidth;
@@ -512,9 +514,9 @@ package cheshire_pkg;
     ret.CachedRegionAddrBase  = {AmSpm,   cfg.LlcOutRegionStart,  CieBase};
     ret.CachedRegionLength    = {SizeSpm, SizeLlcOut,             cfg.Cva6ExtCieLength};
     ret.DebugEn               = 1;
-    ret.RVSCLIC               = cfg.Clic;
-    ret.RVXHCLIC              = cfg.ClicVsclic;
-    ret.CLICNumInterruptSrc   = NumCoreIrqs + NumIntIntrs + cfg.NumExtClicIntrs;
+    // ret.RVSCLIC               = cfg.Clic;
+    // ret.RVXHCLIC              = cfg.ClicVsclic;
+    // ret.CLICNumInterruptSrc   = NumCoreIrqs + NumIntIntrs + cfg.NumExtClicIntrs;
     // TODO: Should some things be removed from the main config?
     // TODO: Should other things be added to the main config?
     // TODO: Tune missing parameters of interest (esp. cache and interconnect) properly

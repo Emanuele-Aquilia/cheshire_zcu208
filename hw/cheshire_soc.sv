@@ -559,6 +559,7 @@ module cheshire_soc import cheshire_pkg::*; #(
   `CHESHIRE_TYPEDEF_AXI_CT(axi_cva6, addr_t, cva6_id_t, axi_data_t, axi_strb_t, axi_user_t)
 
   localparam config_pkg::cva6_user_cfg_t Cva6Cfg = gen_cva6_cfg(Cfg);
+  localparam config_pkg::cva6_cfg_t Cva6CfgBuilt = build_config_pkg::build_config(Cva6Cfg);
 
   // Boot from boot ROM only if available, otherwise from platform ROM
   localparam logic [63:0] BootAddr = 64'(Cfg.Bootrom ? AmBrom : Cfg.PlatformRom);
@@ -591,18 +592,8 @@ module cheshire_soc import cheshire_pkg::*; #(
     axi_cva6_req_t core_out_req, core_ur_req;
     axi_cva6_rsp_t core_out_rsp, core_ur_rsp;
 
-    // CLIC interface
-    logic clic_irq_valid, clic_irq_ready;
-    logic clic_irq_kill_req, clic_irq_kill_ack;
-    logic clic_irq_shv;
-    logic [$clog2(NumClicIntrs)-1:0] clic_irq_id;
-    logic [7:0]        clic_irq_level;
-    riscv::priv_lvl_t  clic_irq_priv;
-    logic              clic_irq_v;
-    logic [5:0]        clic_irq_vsid;
-
     cva6 #(
-      .CVA6Cfg        ( build_config_pkg::build_config(Cva6Cfg) ),
+      .CVA6Cfg        ( Cva6CfgBuilt ),
       .axi_ar_chan_t  ( axi_cva6_ar_chan_t ),
       .axi_aw_chan_t  ( axi_cva6_aw_chan_t ),
       .axi_w_chan_t   ( axi_cva6_w_chan_t  ),
@@ -615,20 +606,10 @@ module cheshire_soc import cheshire_pkg::*; #(
       .rst_ni,
       .boot_addr_i      ( BootAddr ),
       .hart_id_i        ( 64'(i) ),
-      .irq_i            ( xeip[i] ),
+      .irq_i            ( {1'b0, xeip[i]} ),
       .ipi_i            ( msip[i] ),
       .time_irq_i       ( mtip[i] ),
       .debug_req_i      ( dbg_int_req[i] ),
-      .clic_irq_valid_i ( clic_irq_valid ),
-      .clic_irq_id_i    ( clic_irq_id    ),
-      .clic_irq_level_i ( clic_irq_level ),
-      .clic_irq_priv_i  ( clic_irq_priv  ),
-      .clic_irq_v_i     ( clic_irq_v     ),
-      .clic_irq_vsid_i  ( clic_irq_vsid  ),
-      .clic_irq_shv_i   ( clic_irq_shv   ),
-      .clic_irq_ready_o ( clic_irq_ready ),
-      .clic_kill_req_i  ( clic_irq_kill_req ),
-      .clic_kill_ack_o  ( clic_irq_kill_ack ),
       .rvfi_probes_o    ( ),
       .cvxif_req_o      ( ),
       .cvxif_resp_i     ( '0 ),
@@ -723,13 +704,19 @@ module cheshire_soc import cheshire_pkg::*; #(
     // Map user to AMO domain as we are an atomics-capable master.
     // Within the provided AMO user range, we count up from the provided core AMO offset.
     always_comb begin
+      axi_user_t tmp_aw_user;
+      axi_user_t tmp_ar_user;
+      axi_user_t tmp_w_user;
       core_ur_req         = core_out_req;
-      core_ur_req.aw.user = Cfg.AxiUserDefault;
-      core_ur_req.ar.user = Cfg.AxiUserDefault;
-      core_ur_req.w.user  = Cfg.AxiUserDefault;
-      core_ur_req.aw.user [Cfg.AxiUserAmoMsb:Cfg.AxiUserAmoLsb] = Cfg.CoreUserAmoOffs + i;
-      core_ur_req.ar.user [Cfg.AxiUserAmoMsb:Cfg.AxiUserAmoLsb] = Cfg.CoreUserAmoOffs + i;
-      core_ur_req.w.user  [Cfg.AxiUserAmoMsb:Cfg.AxiUserAmoLsb] = Cfg.CoreUserAmoOffs + i;
+      tmp_aw_user         = Cfg.AxiUserDefault;
+      tmp_ar_user         = Cfg.AxiUserDefault;
+      tmp_w_user          = Cfg.AxiUserDefault;
+      tmp_aw_user [Cfg.AxiUserAmoMsb:Cfg.AxiUserAmoLsb] = Cfg.CoreUserAmoOffs + i;
+      tmp_ar_user [Cfg.AxiUserAmoMsb:Cfg.AxiUserAmoLsb] = Cfg.CoreUserAmoOffs + i;
+      tmp_w_user  [Cfg.AxiUserAmoMsb:Cfg.AxiUserAmoLsb] = Cfg.CoreUserAmoOffs + i;
+      core_ur_req.aw.user = tmp_aw_user;
+      core_ur_req.ar.user = tmp_ar_user;
+      core_ur_req.w.user  = tmp_w_user;
       core_out_rsp        = core_ur_rsp;
     end
 
