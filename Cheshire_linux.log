@@ -1,0 +1,268 @@
+ /\___/\       Boot mode:       0
+( o   o )      Real-time clock: 1000000 Hz
+(  =^=  )      System clock:    50035000 Hz
+(        )     Read global ptr: 0x00000000
+(    P    )    Read pointer:    0x00000000
+(  U # L   )   Read argument:   0x00000000
+(    P      )
+(           ))))))))))
+
+[ZSL] Launch firmware at 80000000 with device tree at 8f000000
+
+OpenSBI v0.9
+   ____                    _____ ____ _____
+  / __ \                  / ____|  _ \_   _|
+ | |  | |_ __   ___ _ __ | (___ | |_) || |
+ | |  | | '_ \ / _ \ '_ \ \___ \|  _ < | |
+ | |__| | |_) |  __/ | | |____) | |_) || |_
+  \____/| .__/ \___|_| |_|_____/|____/_____|
+        | |
+        |_|
+
+Platform Name             : CHESHIRE RISC-V
+Platform Features         : medeleg
+Platform HART Count       : 1
+Platform IPI Device       : aclint-mswi
+Platform Timer Device     : aclint-mtimer @ 1000000Hz
+Platform Console Device   : uart8250
+Platform HSM Device       : ---
+Platform Reboot Device    : ---
+Platform Shutdown Device  : ---
+Firmware Base             : 0x80000000
+Firmware Size             : 220 KB
+Runtime SBI Version       : 0.3
+
+Domain0 Name              : root
+Domain0 Boot HART         : 0
+Domain0 HARTs             : 0*
+Domain0 Region00          : 0x000000000204bff8-0x000000000204bfff (I)
+Domain0 Region01          : 0x0000000002044000-0x000000000204400f (I)
+Domain0 Region02          : 0x0000000002040000-0x0000000002043fff (I)
+Domain0 Region03          : 0x0000000080000000-0x000000008003ffff ()
+Domain0 Region04          : 0x0000000000000000-0xffffffffffffffff (R,W,X)
+Domain0 Next Address      : 0x0000000080200000
+Domain0 Next Arg1         : 0x0000000080800000
+Domain0 Next Mode         : S-mode
+Domain0 SysReset          : yes
+
+Boot HART ID              : 0
+Boot HART Domain          : root
+Boot HART ISA             : rv64imafdcsuh
+Boot HART Features        : scounteren,mcounteren,mcountinhibit
+Boot HART PMP Count       : 0
+Boot HART PMP Granularity : 0
+Boot HART PMP Address Bits: 0
+Boot HART MHPM Count      : 6
+Boot HART MIDELEG         : 0x0000000000001666
+Boot HART MEDELEG         : 0x0000000000f0b509
+
+
+U-Boot 2021.07-rc4-gcb3f747f5e (Jun 10 2026 - 18:28:48 +0200)
+
+CPU:   rv64imafdc
+DRAM:  4 GiB
+bind node reserved-memory
+Device 'reserved-memory' has no compatible string
+bind node chosen
+Device 'chosen' has no compatible string
+bind node memory@80000000
+Device 'memory@80000000' has no compatible string
+bind node cpus
+Device 'cpus' has no compatible string
+bind node soc
+   - attempt to match compatible string 'eth,cheshire-bare-soc'
+   - attempt to match compatible string 'simple-bus'
+   - found match at 'simple_bus': 'simple-bus' matches 'simple-bus'
+bind node debug@0
+   - attempt to match compatible string 'riscv,debug-013'
+No match for node 'debug@0'
+bind node axi_llc@3001000
+   - attempt to match compatible string 'eth,axi-llc'
+No match for node 'axi_llc@3001000'
+bind node memory-controller@3006000
+   - attempt to match compatible string 'eth,ddr-link'
+No match for node 'memory-controller@3006000'
+bind node serial@3002000
+   - attempt to match compatible string 'ns16550a'
+   - found match at 'ns16550_serial': 'ns16550' matches 'ns16550a'
+Bound device serial@3002000 to soc
+bind node i2c@3003000
+   - attempt to match compatible string 'eth,i2c'
+No match for node 'i2c@3003000'
+bind node spi@3004000
+   - attempt to match compatible string 'opentitan,spi-host'
+   - found match at 'opentitan_qspi': 'opentitan,spi-host' matches 'opentitan,spi-host'
+bind node nor@1
+   - attempt to match compatible string 'mt25qu01g'
+   - attempt to match compatible string 'jedec,spi-nor'
+   - found match at 'jedec_spi_nor': 'jedec,spi-nor' matches 'jedec,spi-nor'
+Bound device nor@1 to spi@3004000
+Bound device spi@3004000 to soc
+bind node vga@3007000
+   - attempt to match compatible string 'eth,axi-vga'
+No match for node 'vga@3007000'
+bind node clint@2040000
+   - attempt to match compatible string 'riscv,clint0'
+No match for node 'clint@2040000'
+bind node interrupt-controller@4000000
+   - attempt to match compatible string 'sifive,plic-1.0.0'
+   - attempt to match compatible string 'riscv,plic0'
+No match for node 'interrupt-controller@4000000'
+Bound device soc to root_driver
+bind node cpu@0
+   - attempt to match compatible string 'eth,ariane'
+   - attempt to match compatible string 'riscv'
+   - found match at 'riscv_cpu': 'riscv' matches 'riscv'
+Bound device riscv_timer to cpu@0
+Bound device cpu@0 to cpus
+Bound device cpus to root_driver
+MMC:   0
+   - not found
+
+Loading Environment from nowhere... OK
+In:    serial@3002000
+Out:   serial@3002000
+Err:   serial@3002000
+Net:   No ethernet found.
+Hit any key to stop autoboot:  5  4  3  2  1  0 
+No MMC device available
+0
+   - 0 'spi@3004000'
+   - found
+opentitan_qspi spi@3004000: spi_find_chip_select: plat=00000000ff774520, cs=1
+opentitan_qspi spi@3004000: spi_find_bus_and_cs: No cs 2
+0
+   - 0 'spi@3004000'
+   - found
+opentitan_qspi spi@3004000: clock-frequency = 50000000 Hz
+opentitan_qspi spi@3004000: max-frequency = 25000000 Hz
+opentitan_qspi spi@3004000: regs @ 0x3004000
+opentitan_qspi spi@3004000: opentitan_qspi_probe: Setting CS to 2
+opentitan_qspi spi@3004000: regs = 3004000, unused_cs = 2 used_cs = 0
+opentitan_qspi spi@3004000: spi_find_chip_select: plat=00000000ff774520, cs=1
+opentitan_qspi spi@3004000: spi_get_bus_and_cs: Binding new device 'spi_flash@0:2', busnum=0, cs=2, driver=jedec_spi_nor
+Bound device spi_flash@0:2 to spi@3004000
+opentitan_qspi spi@3004000: Saving SPI clkdiv to 18
+opentitan_qspi spi@3004000: Saving SPI mode to 3
+jedec_spi_nor spi_flash@0:2: opentitan_qspi_claim_bus: Set mode and speed for parent_priv->used_cs=2 , configopts=cfff0018
+jedec_spi_nor spi_flash@0:2: opentitan_qspi_claim_bus: Set mode and speed for parent_priv->used_cs=2 , configopts=cfff0018
+opentitan_qspi spi@3004000: opentitan_qspi_xfer_single: Setting CS to 2
+opentitan_qspi spi@3004000: opentitan_qspi_xfer_single: Setting CS to 2
+jedec_spi_nor spi_flash@0:2: unrecognized JEDEC id bytes: 00, 00, 00
+spi_get_bus_and_cs: Error path, created=1, device 'spi_flash@0:2'
+Failed to initialize SPI flash at 0:2 (error -2)
+Wrong Image Format for bootm command
+ERROR: can't get kernel image!
+=> bootm 0x84000000 - 0x8F000000
+## Booting kernel from Legacy Image at 84000000 ...
+   Image Name:   CV64A6Linux
+   Image Type:   RISC-V Linux Kernel Image (gzip compressed)
+   Data Size:    5637517 Bytes = 5.4 MiB
+   Load Address: 80200000
+   Entry Point:  80200000
+   Verifying Checksum ... OK
+## Flattened Device Tree blob at 8f000000
+   Booting using the fdt blob at 0x8f000000
+   Uncompressing Kernel Image
+   Loading Device Tree to 00000000bf800000, end 00000000bf803a25 ... OK
+
+Starting kernel ...
+
+serial@3002000: When removing: flags=600, drv->flags=0, err=-129
+spi@3004000: When removing: flags=600, drv->flags=0, err=-129
+soc: When removing: flags=600, drv->flags=4, err=-129
+riscv_timer: When removing: flags=600, drv->flags=4, err=-129
+cpu@0: When removing: flags=600, drv->flags=4, err=-129
+cpus: When removing: flags=600, drv->flags=0, err=-129
+root_driver: When removing: flags=600, drv->flags=0, err=-129
+[    0.000000] Linux version 5.10.7 (emanuele@emanuele-ubuntu) (riscv64-buildroot-linux-gnu-gcc.br_real (Buildroot 2021.08) 10.3.0, GNU ld (GNU Binutils) 2.36.1) #3 SMP Wed Jun 10 18:47:12 CEST 2026
+[    0.000000] OF: fdt: Ignoring memory range 0x80000000 - 0x80200000
+[    0.000000] earlycon: uart8250 at MMIO32 0x0000000003002000 (options '')
+[    0.000000] printk: bootconsole [uart8250] enabled
+[    0.000000] efi: UEFI not found.
+[    0.000000] Zone ranges:
+[    0.000000]   DMA32    [mem 0x0000000080200000-0x00000000ffffffff]
+[    0.000000]   Normal   [mem 0x0000000100000000-0x000000017fffffff]
+[    0.000000] Movable zone start for each node
+[    0.000000] Early memory node ranges
+[    0.000000]   node   0: [mem 0x0000000080200000-0x000000017fffffff]
+[    0.000000] Initmem setup node 0 [mem 0x0000000080200000-0x000000017fffffff]
+[    0.000000] software IO TLB: mapped [mem 0x00000000fbfff000-0x00000000fffff000] (64MB)
+[    0.000000] SBI specification v0.3 detected
+[    0.000000] SBI implementation ID=0x1 Version=0x9
+[    0.000000] SBI v0.2 TIME extension detected
+[    0.000000] SBI v0.2 IPI extension detected
+[    0.000000] SBI v0.2 RFENCE extension detected
+[    0.000000] SBI v0.2 HSM extension detected
+[    0.000000] riscv: ISA extensions acdfim
+[    0.000000] riscv: ELF capabilities acdfim
+[    0.000000] percpu: Embedded 15 pages/cpu s22872 r8192 d30376 u61440
+[    0.000000] Built 1 zonelists, mobility grouping on.  Total pages: 1033735
+[    0.000000] Kernel command line: earlycon=uart8250,mmio32,0x3002000 console=ttyS0,115200n8 rw random.trust_cpu=on debug loglevel=7
+[    0.000000] Dentry cache hash table entries: 524288 (order: 10, 4194304 bytes, linear)
+[    0.000000] Inode-cache hash table entries: 262144 (order: 9, 2097152 bytes, linear)
+[    0.000000] Sorting __ex_table...
+[    0.000000] mem auto-init: stack:off, heap alloc:off, heap free:off
+[    0.000000] Memory: 4049596K/4192256K available (2508K kernel code, 2785K rwdata, 2048K rodata, 162K init, 241K bss, 142660K reserved, 0K cma-reserved)
+[    0.000000] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=1, Nodes=1
+[    0.000000] rcu: Hierarchical RCU implementation.
+[    0.000000] rcu: 	RCU event tracing is enabled.
+[    0.000000] rcu: 	RCU restricting CPUs from NR_CPUS=8 to nr_cpu_ids=1.
+[    0.000000] rcu: RCU calculated value of scheduler-enlistment delay is 10 jiffies.
+[    0.000000] rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=1
+[    0.000000] NR_IRQS: 64, nr_irqs: 64, preallocated irqs: 0
+[    0.000000] riscv-intc: 64 local interrupts mapped
+[    0.000000] plic: interrupt-controller@4000000: mapped 20 interrupts with 1 handlers for 2 contexts.
+[    0.000000] random: get_random_bytes called from start_kernel+0x2a2/0x40c with crng_init=0
+[    0.000000] riscv_timer_init_dt: Registering clocksource cpuid [0] hartid [0]
+[    0.000000] clocksource: riscv_clocksource: mask: 0xffffffffffffffff max_cycles: 0x1d854df40, max_idle_ns: 3526361616960 ns
+[    0.000489] sched_clock: 64 bits at 1000kHz, resolution 1000ns, wraps every 2199023255500ns
+[    0.015222] Calibrating delay loop (skipped), value calculated using timer frequency.. 2.00 BogoMIPS (lpj=10000)
+[    0.031058] pid_max: default: 32768 minimum: 301
+[    0.052843] Mount-cache hash table entries: 8192 (order: 4, 65536 bytes, linear)
+[    0.068242] Mountpoint-cache hash table entries: 8192 (order: 4, 65536 bytes, linear)
+[    0.180611] rcu: Hierarchical SRCU implementation.
+[    0.204336] EFI services will not be available.
+[    0.220115] smp: Bringing up secondary CPUs ...
+[    0.228064] smp: Brought up 1 node, 1 CPU
+[    0.259047] devtmpfs: initialized
+[    0.361989] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 19112604462750000 ns
+[    0.376860] futex hash table entries: 256 (order: 2, 16384 bytes, linear)
+[    1.272667] clocksource: Switched to clocksource riscv_clocksource
+[   11.353195] workingset: timestamp_bits=62 max_order=20 bucket_order=0
+[   14.046461] io scheduler mq-deadline registered
+[   14.055150] io scheduler kyber registered
+[   18.085845] Serial: 8250/16550 driver, 4 ports, IRQ sharing disabled
+[   18.236138] printk: console [ttyS0] disabled
+[   18.245479] 3002000.serial: ttyS0 at MMIO 0x3002000 (irq = 1, base_baud = 3125000) is a 16550A
+[   18.259775] printk: console [ttyS0] enabled
+[   18.259775] printk: console [ttyS0] enabled
+[   18.272961] printk: bootconsole [uart8250] disabled
+[   18.272961] printk: bootconsole [uart8250] disabled
+[   18.377000] opentitan_qspi 3004000.spi: cs1 >= max 1
+[   18.385540] spi_master spi0: spi_device register error /soc/spi@3004000/nor@1
+[   18.396571] spi_master spi0: Failed to create SPI device for /soc/spi@3004000/nor@1
+[   18.407662] opentitan_qspi 3004000.spi: initialized; err_irq = 19, evt_irq = 20, num cs = 2, byte order = 1
+[   18.421811] opentitan_qspi 3004000.spi: Params: regs = 0x4003000, clk_freq = 50000000, max_freq = 25000000, cs_state = 0
+[   18.436225] opentitan_qspi 3004000.spi: Params: used_cs = 0, unused_cs = 2
+[   18.446302] opentitan_qspi 3004000.spi: Status reg @ 0x4003014: 0x91500000
+[   18.583257] Freeing unused kernel memory: 160K
+[   18.596085] Run /init as init process
+Starting syslogd: OK
+Starting klogd: OK
+Running sysctl: OK
+Saving random seed: [   29.818339] random: dd: uninitialized urandom read (512 bytes read)
+OK
+Starting rpcbind: OK
+ifconfig: socket: Function not implemented
+NFS preparation skipped, OK
+
+[4;37m[PULP Platform] Welcome to Linux on [1m[38;5;208mC[38;5;209mh[38;5;210me[38;5;211ms[38;5;212mh[38;5;177mi[38;5;141mr[38;5;105me[m
+
+# ls
+[0;0mREADME.md[m      [1;32minit[m           [1;34mmnt[m            [1;34msbin[m           [1;34mvar[m
+[1;34mbin[m            [1;34mlib[m            [1;34mopt[m            [1;34msys[m
+[1;32mcachetest.elf[m  [1;36mlib64[m          [1;34mproc[m           [1;32mtetris[m
+[1;34mdev[m            [1;36mlinuxrc[m        [1;34mroot[m           [1;34mtmp[m
+[1;34metc[m            [1;34mmedia[m          [1;34mrun[m            [1;34musr[m
+# 

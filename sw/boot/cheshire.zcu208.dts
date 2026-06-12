@@ -8,7 +8,7 @@
 
 / {
   chosen {
-    bootargs = "earlycon=sbi console=ttyS0,115200n8 debug loglevel=7";
+    bootargs = "earlycon=uart8250,mmio32,0x3002000 console=ttyS0,115200n8 rw random.trust_cpu=on debug loglevel=7";
   };
 
   memory@80000000 {
@@ -19,12 +19,12 @@
 
 &PLIC0 {
   compatible = "sifive,plic-1.0.0", "riscv,plic0";
-  riscv,ndev = <58>;
+  riscv,ndev = <20>;
 };
 
 &soc {
   serial@3002000 {
-    interrupts = <2>;
+    interrupts = <1>;
   };
 };
 

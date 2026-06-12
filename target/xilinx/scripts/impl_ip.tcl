@@ -158,7 +158,8 @@ switch $proj {
                     CONFIG.RESET_BOARD_INTERFACE {Custom} \
                     CONFIG.USE_RESET {true} \
                     CONFIG.PRIM_SOURCE {No_Buffer} \
-                    CONFIG.PRIM_IN_FREQ {300.000} \
+                    CONFIG.PRIM_IN_FREQ {100.000} \
+                    CONFIG.CLKIN1_JITTER_PS {100.000} \
                     CONFIG.CLKOUT1_USED {true} \
                     CONFIG.CLKOUT2_USED {true} \
                     CONFIG.CLKOUT3_USED {true} \
@@ -171,13 +172,6 @@ switch $proj {
                     CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {48.000} \
                     CONFIG.CLKOUT3_REQUESTED_OUT_FREQ {20.000} \
                     CONFIG.CLKOUT4_REQUESTED_OUT_FREQ {10.000} \
-                    CONFIG.MMCM_DIVCLK_DIVIDE {1} \
-                    CONFIG.MMCM_CLKFBOUT_MULT_F {4.000} \
-                    CONFIG.MMCM_CLKIN1_PERIOD {3.333} \
-                    CONFIG.MMCM_CLKOUT0_DIVIDE_F {24.000} \
-                    CONFIG.MMCM_CLKOUT1_DIVIDE {25} \
-                    CONFIG.MMCM_CLKOUT2_DIVIDE {60} \
-                    CONFIG.MMCM_CLKOUT3_DIVIDE {120} \
                     CONFIG.NUM_OUT_CLKS {4} \
                     ] [get_ips $proj]
             }

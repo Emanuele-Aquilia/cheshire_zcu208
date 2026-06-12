@@ -1,5 +1,5 @@
 # This script was generated automatically by bender.
-set ROOT "/home/emanuele/Desktop/cheshire_zcu208"
+set ROOT "/home/emanuele/Desktop/thesis_hardware/cheshire_zcu208"
 
 add_files -norecurse -fileset [current_fileset] [list \
     $ROOT/.bender/git/checkouts/tech_cells_generic-223c43ccbeb688f9/src/fpga/pad_functional_xilinx.sv \
@@ -31,6 +31,7 @@ add_files -norecurse -fileset [current_fileset] [list \
     $ROOT/.bender/git/checkouts/common_cells-7f7ae0f5e6bf7fb5/src/exp_backoff.sv \
     $ROOT/.bender/git/checkouts/common_cells-7f7ae0f5e6bf7fb5/src/fifo_v3.sv \
     $ROOT/.bender/git/checkouts/common_cells-7f7ae0f5e6bf7fb5/src/gray_to_binary.sv \
+    $ROOT/.bender/git/checkouts/common_cells-7f7ae0f5e6bf7fb5/src/heaviside.sv \
     $ROOT/.bender/git/checkouts/common_cells-7f7ae0f5e6bf7fb5/src/isochronous_4phase_handshake.sv \
     $ROOT/.bender/git/checkouts/common_cells-7f7ae0f5e6bf7fb5/src/isochronous_spill_register.sv \
     $ROOT/.bender/git/checkouts/common_cells-7f7ae0f5e6bf7fb5/src/lfsr.sv \
@@ -42,6 +43,7 @@ add_files -norecurse -fileset [current_fileset] [list \
     $ROOT/.bender/git/checkouts/common_cells-7f7ae0f5e6bf7fb5/src/plru_tree.sv \
     $ROOT/.bender/git/checkouts/common_cells-7f7ae0f5e6bf7fb5/src/passthrough_stream_fifo.sv \
     $ROOT/.bender/git/checkouts/common_cells-7f7ae0f5e6bf7fb5/src/popcount.sv \
+    $ROOT/.bender/git/checkouts/common_cells-7f7ae0f5e6bf7fb5/src/ring_buffer.sv \
     $ROOT/.bender/git/checkouts/common_cells-7f7ae0f5e6bf7fb5/src/rr_arb_tree.sv \
     $ROOT/.bender/git/checkouts/common_cells-7f7ae0f5e6bf7fb5/src/rstgen_bypass.sv \
     $ROOT/.bender/git/checkouts/common_cells-7f7ae0f5e6bf7fb5/src/serial_deglitch.sv \
@@ -61,9 +63,11 @@ add_files -norecurse -fileset [current_fileset] [list \
     $ROOT/.bender/git/checkouts/common_cells-7f7ae0f5e6bf7fb5/src/unread.sv \
     $ROOT/.bender/git/checkouts/common_cells-7f7ae0f5e6bf7fb5/src/read.sv \
     $ROOT/.bender/git/checkouts/common_cells-7f7ae0f5e6bf7fb5/src/addr_decode_dync.sv \
+    $ROOT/.bender/git/checkouts/common_cells-7f7ae0f5e6bf7fb5/src/boxcar.sv \
     $ROOT/.bender/git/checkouts/common_cells-7f7ae0f5e6bf7fb5/src/cdc_2phase.sv \
     $ROOT/.bender/git/checkouts/common_cells-7f7ae0f5e6bf7fb5/src/cdc_4phase.sv \
     $ROOT/.bender/git/checkouts/common_cells-7f7ae0f5e6bf7fb5/src/clk_int_div_static.sv \
+    $ROOT/.bender/git/checkouts/common_cells-7f7ae0f5e6bf7fb5/src/trip_counter.sv \
     $ROOT/.bender/git/checkouts/common_cells-7f7ae0f5e6bf7fb5/src/addr_decode.sv \
     $ROOT/.bender/git/checkouts/common_cells-7f7ae0f5e6bf7fb5/src/addr_decode_napot.sv \
     $ROOT/.bender/git/checkouts/common_cells-7f7ae0f5e6bf7fb5/src/multiaddr_decode.sv \
@@ -147,6 +151,7 @@ add_files -norecurse -fileset [current_fileset] [list \
     $ROOT/.bender/git/checkouts/axi-ecdc900686449c15/src/axi_fifo_delay_dyn.sv \
     $ROOT/.bender/git/checkouts/axi-ecdc900686449c15/src/axi_id_remap.sv \
     $ROOT/.bender/git/checkouts/axi-ecdc900686449c15/src/axi_id_prepend.sv \
+    $ROOT/.bender/git/checkouts/axi-ecdc900686449c15/src/axi_inval_filter.sv \
     $ROOT/.bender/git/checkouts/axi-ecdc900686449c15/src/axi_isolate.sv \
     $ROOT/.bender/git/checkouts/axi-ecdc900686449c15/src/axi_join.sv \
     $ROOT/.bender/git/checkouts/axi-ecdc900686449c15/src/axi_lite_demux.sv \
