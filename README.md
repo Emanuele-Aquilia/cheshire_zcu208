@@ -20,30 +20,54 @@ To achieve a stable build and correct functionality on the ZCU208, several modif
 ## Building the Project
 
 ### Prerequisites
-- Xilinx Vivado 2023.2
+- Xilinx Vivado > 2023.2
 - RISC-V GCC Toolchain (e.g., `riscv64-unknown-elf-`)
 - [Bender](https://github.com/pulp-platform/bender) for hardware dependency management.
 
 ### Hardware Build
 To generate the bitstream for the ZCU208:
 ```bash
-make zcu208
+make bender
 ```
-This will trigger the Vivado synthesis and implementation flow using the scripts in `target/xilinx`.
+This will trigger bender to update and download the necessary artifacts.
+
+```bash
+git submodule update --init --recursive
+```
+This is done to download everything excluded from bender 
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+this is done because during the build process some python libraries are needed
+
+```bash
+make chs-xilinx-zcu208
+```
+This will trigger the Vivado synthesis and implementation flow using the scripts in `target/xilinx`. This script will take from 45 to 70 minutes to run.
 
 ### Software Build
-To build the bootloader and tests:
+To build the the basic software folder and tests:
 ```bash
-make sw
+make sw-all
 ```
+
+To build the linux distro:
+```bash
+cd ./sw/deps/cva6-sdk
+make images
+```
+this will download the necessary modules for linux and build them.
 
 ## Running on ZCU208
 
-1. **UART Connection**: Connect to the ZCU208 via USB. The SoC UART is mapped to **FTDI Port C**.
+1. **UART Connection**: Connect to the ZCU208 via USB. The SoC UART is mapped to **FTDI Port 2**.
 2. **Boot Mode**: Ensure the board boot mode switches are set correctly for JTAG or SD Card boot as required.
 3. **Loading the Bitstream**: Use Vivado Hardware Manager or the provided scripts to load the `.bit` file.
     ```bash
-    util/ssh_load_bitstream.py --bit target/xilinx/out/cheshire_zcu208.bit
+    ./util/load_and_run.sh
     ```
 
 ## Booting Linux & Running Custom Code (Side-Channel Attacks)
@@ -95,7 +119,7 @@ Open your UART terminal (e.g., `picocom -b 115200 /dev/ttyUSB2`). You will see O
 Because U-Boot expects an SD card, it will fail to load standard boot scripts and drop you into its interactive prompt (`=>`). Instruct U-Boot to boot the kernel we injected into RAM at `0x84000000` using the Device Tree at `0x88000000`:
 
 ```text
-=> bootm 0x84000000 - 0x88000000
+=> bootm 0x84000000 - 0x8F000000
 ```
 
 Linux will now boot up from the DRAM and drop you into a root shell, where you will find your custom `my_attack` binary in `/usr/bin/`.

@@ -37,20 +37,24 @@ echo "--- Launching GDB ---"
 read -p "Do you want to automatically load Linux images? [y/N]: " LOAD_LINUX
 
 if [[ "$LOAD_LINUX" =~ ^[Yy]$ ]]; then
-    echo "--- Preparing Linux Auto-Load Script ---"
+    echo "--- Preparing Linux Auto-Load Script (ZSL-based) ---"
     GDB_CMD_FILE=$(mktemp)
     cat <<EOF > "$GDB_CMD_FILE"
 target extended-remote :3333
+echo \n--- Loading ZSL ---\n
+load sw/boot/zsl.spm.elf
 echo \n--- Restoring OpenSBI/U-Boot ---\n
 restore sw/deps/cva6-sdk/install64/fw_payload.bin binary 0x80000000
 echo \n--- Restoring Linux Kernel (uImage) ---\n
 restore sw/deps/cva6-sdk/install64/uImage binary 0x84000000
 echo \n--- Restoring Device Tree ---\n
-restore sw/boot/cheshire.zcu208.dtb binary 0x88000000
-set \$pc = 0x80000000
+restore sw/boot/cheshire.zcu208.dtb binary 0x8F000000
+set \$pc = 0x10000000
 set \$a0 = 0
-set \$a1 = 0x88000000
-echo \n--- Auto-load complete. Type 'continue' to start boot. ---\n
+set \$a1 = 0
+# Set scratch[0] to 0 to indicate preloaded boot to ZSL
+set {int}0x03000000 = 0
+echo \n--- Auto-load complete. Type 'continue' to start boot via ZSL. ---\n
 EOF
     gdb-multiarch -x "$GDB_CMD_FILE"
     rm "$GDB_CMD_FILE"
