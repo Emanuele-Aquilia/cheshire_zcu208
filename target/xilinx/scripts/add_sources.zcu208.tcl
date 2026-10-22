@@ -734,6 +734,7 @@ add_files -norecurse -fileset [current_fileset] [list \
 add_files -norecurse -fileset [current_fileset] [list \
     $ROOT/target/xilinx/src/dram_wrapper_xilinx.sv \
     $ROOT/target/xilinx/src/fan_ctrl.sv \
+    $ROOT/target/xilinx/src/hpdcache_sram_xilinx.sv \
     $ROOT/target/xilinx/src/regs/chs_xilinx_reg_pkg.sv \
     $ROOT/target/xilinx/src/regs/chs_xilinx_reg_top.sv \
     $ROOT/target/xilinx/src/cheshire_top_xilinx.sv \

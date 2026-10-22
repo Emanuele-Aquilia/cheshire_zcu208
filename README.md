@@ -46,7 +46,7 @@ this is done because during the build process some python libraries are needed
 ```bash
 make chs-xilinx-zcu208
 ```
-This will trigger the Vivado synthesis and implementation flow using the scripts in `target/xilinx`. This script will take from 45 to 70 minutes to run.
+This will trigger the Vivado synthesis and implementation flow using the scripts in `target/xilinx`. This script will take some time to run, depending on your hardware and assigned job (you can change them in the ./target/xilinx/scripts/common.tcl).
 
 ### Software Build
 To build the the basic software folder and tests:

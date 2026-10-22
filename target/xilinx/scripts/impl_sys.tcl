@@ -22,6 +22,12 @@ import_files -fileset constrs_1 -norecurse ${xilinx_root}/constraints/${board}.x
 # Load RTL sources
 source ${xilinx_root}/scripts/add_sources.${board}.tcl
 
+# Replace the HPDcache behavioral SRAMs (3D arrays, not BRAM-inferable) with
+# the BRAM-inferable versions in target/xilinx/src/hpdcache_sram_xilinx.sv.
+foreach f {hpdcache_sram_1rw.sv hpdcache_sram_wbyteenable_1rw.sv} {
+    set_property is_enabled false [get_files */macros/behav/$f]
+}
+
 # Keep GPIO UART ports on boards that map them.
 if { $board != "zcu208" } {
     set_property verilog_define {USE_UART_GPIO} [current_fileset]

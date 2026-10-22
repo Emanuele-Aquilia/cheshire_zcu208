@@ -1,0 +1,74 @@
+diff --git a/Makefile b/Makefile
+index a10e303..3d5944d 100644
+--- a/Makefile
++++ b/Makefile
+@@ -89,7 +89,7 @@ rootfs/tetris: $(CC)
+ 	cd ./vitetris/ && make clean && ./configure CC=$(CC) && make
+ 	cp ./vitetris/tetris $@
+ 
+-$(RISCV)/vmlinux: $(buildroot_defconfig) $(linux_defconfig) $(busybox_defconfig) $(CC) rootfs/cachetest.elf rootfs/tetris
++$(RISCV)/vmlinux: $(buildroot_defconfig) $(linux_defconfig) $(busybox_defconfig) $(CC) rootfs/tetris 
+ 	mkdir -p $(RISCV)
+ 	make -C buildroot $(buildroot-mk)
+ 	cp buildroot/output/images/vmlinux $@
+diff --git a/configs/busybox32.config b/configs/busybox32.config
+index 0a91050..1da1621 100644
+--- a/configs/busybox32.config
++++ b/configs/busybox32.config
+@@ -413,7 +413,7 @@ CONFIG_FEATURE_AWK_GNU_EXTENSIONS=y
+ # CONFIG_FEATURE_DIFF_DIR is not set
+ CONFIG_ED=y
+ # CONFIG_PATCH is not set
+-# CONFIG_SED is not set
++CONFIG_SED=y
+ CONFIG_VI=y
+ CONFIG_FEATURE_VI_MAX_LEN=4096
+ # CONFIG_FEATURE_VI_8BIT is not set
+diff --git a/configs/busybox64.config b/configs/busybox64.config
+index 973be9d..eb4fe2b 100644
+--- a/configs/busybox64.config
++++ b/configs/busybox64.config
+@@ -413,7 +413,7 @@ CONFIG_FEATURE_AWK_GNU_EXTENSIONS=y
+ # CONFIG_FEATURE_DIFF_DIR is not set
+ CONFIG_ED=y
+ # CONFIG_PATCH is not set
+-# CONFIG_SED is not set
++CONFIG_SED=y
+ CONFIG_VI=y
+ CONFIG_FEATURE_VI_MAX_LEN=4096
+ # CONFIG_FEATURE_VI_8BIT is not set
+diff --git a/configs/linux64_defconfig b/configs/linux64_defconfig
+index 962fb58..285da32 100644
+--- a/configs/linux64_defconfig
++++ b/configs/linux64_defconfig
+@@ -10,7 +10,8 @@ CONFIG_CMDLINE="earlyprintk debug loglevel=7"
+ CONFIG_MODULES=y
+ # CONFIG_BLK_DEV_BSG is not set
+ CONFIG_PARTITION_ADVANCED=y
+-# CONFIG_COMPACTION is not set
++CONFIG_COMPACTION=y
++CONFIG_HUGETLBFS=y
+ CONFIG_PACKET=y
+ CONFIG_UNIX=y
+ CONFIG_TLS=y
+diff --git a/rootfs/etc/init.d/S99custom_procs b/rootfs/etc/init.d/S99custom_procs
+new file mode 100755
+index 0000000..55c8e10
+--- /dev/null
++++ b/rootfs/etc/init.d/S99custom_procs
+@@ -0,0 +1,14 @@
++#!/bin/sh
++start() {
++    /usr/bin/proc1 > /var/log/proc1.log 2>&1 &
++    /usr/bin/proc2 > /var/log/proc2.log 2>&1 &
++}
++stop() {
++    killall proc1 proc2
++}
++case "$1" in
++  start) start ;;
++  stop) stop ;;
++  restart) stop; start ;;
++  *) echo "Usage: $0 {start|stop|restart}"; exit 1 ;;
++esac
+\ No newline at end of file

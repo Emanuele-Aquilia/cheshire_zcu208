@@ -1,0 +1,76 @@
+# ./timer-evaluation_timer-resolution 
+[+] clock_gettime Increment: 100
+[+] rdcycle Estimated increment: 1.0
+[+] get_cycle_perf Estimated increment: 1.0
+[+] rdtime Estimated increment: 1.0
+[+] get_time_perf Estimated increment: 1.0
+
+# ./timer-evaluation
+[+] clock_gettime: 964ns
+[+] rdcycle: 3083 ticks
+[+] rdtime: 359 ticks
+[+] get_time_perf: 351 ticks
+[+] get_cycle_perf: 3635 ticks
+[+] get_retire_perf: 4242 retired in interval with 4096 nops
+[+] count_thread 100000 spins in 862ns
+
+
+[+] Results:
+|timer            | resulution|
+|-----------------|-----------|
+|clock_gettime    |    1ns    |
+|rdcycle          |    0ns    |
+|get_cycle_perf   |    0ns    |
+|rdtime           |    2ns    |
+|get_time_perf    |    2ns    |
+|get_retire_perf  |    0ns    |
+|count_thread     |    0ns    |
+
+This doesn't make sense, changing back to 100000 rounds insteand of 1 milion
+
+100000 rounds: 
+
+# ./timer-evaluation
+[+] clock_gettime: 17649ns
+[+] rdcycle: 16524 ticks
+[+] rdtime: 359 ticks
+[+] get_time_perf: 345 ticks
+[+] get_cycle_perf: 16242 ticks
+[+] get_retire_perf: 4255 retired in interval with 4096 nops
+[+] count_thread 100000 spins in 26844ns
+
+
+[+] Results:
+|timer            | resulution|
+|-----------------|-----------|
+|clock_gettime    |    1ns    |
+|rdcycle          |    1ns    |
+|get_cycle_perf   |    1ns    |
+|rdtime           |   49ns    |
+|get_time_perf    |   51ns    |
+|get_retire_perf  |    4ns    |
+|count_thread     |    0ns    |
+
+
+200000 rounds: 
+
+# ./timer-evaluation
+[+] clock_gettime: 4996ns
+[+] rdcycle: 15968 ticks
+[+] rdtime: 358 ticks
+[+] get_time_perf: 351 ticks
+[+] get_cycle_perf: 16517 ticks
+[+] get_retire_perf: 4241 retired in interval with 4096 nops
+[+] count_thread 100000 spins in 754ns
+
+
+[+] Results:
+|timer            | resulution|
+|-----------------|-----------|
+|clock_gettime    |    1ns    |
+|rdcycle          |    0ns    |
+|get_cycle_perf   |    0ns    |
+|rdtime           |   13ns    |
+|get_time_perf    |   14ns    |
+|get_retire_perf  |    1ns    |
+|count_thread     |    0ns    |

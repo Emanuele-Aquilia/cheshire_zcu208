@@ -20,7 +20,7 @@ sleep 1
 # 3. Start OpenOCD in the background
 echo "--- Starting OpenOCD ---"
 # We redirect output to a log file so it doesn't clutter your GDB session
-openocd -f util/openocd.zcu208.tcl > openocd.log 2>&1 &
+openocd -f util/openocd.zcu208.tcl > logs/openocd.log 2>&1 &
 OPENOCD_PID=$!
 
 # Give OpenOCD a moment to initialize
@@ -28,7 +28,7 @@ sleep 2
 
 # Check if OpenOCD started successfully
 if ! kill -0 $OPENOCD_PID 2>/dev/null; then
-    echo "Error: OpenOCD failed to start. Check openocd.log"
+    echo "Error: OpenOCD failed to start. Check logs/openocd.log"
     exit 1
 fi
 
@@ -73,4 +73,4 @@ echo "--- Shutting down OpenOCD ---"
 kill $OPENOCD_PID 2>/dev/null
 wait $OPENOCD_PID 2>/dev/null
 
-rm openocd.log 2>/dev/null
+rm logs/openocd.log 2>/dev/null

@@ -495,9 +495,11 @@ package cheshire_pkg;
     // Modify what we need to
     ret.RVB                   = 1;
     ret.RVZiCbom              = 1;
+    ret.DCacheType            = config_pkg::HPDCACHE_WT;
     ret.AxiAddrWidth          = cfg.AddrWidth;
     ret.AxiDataWidth          = cfg.AxiDataWidth;
     ret.AxiIdWidth            = Cva6IdWidth;
+    ret.MemTidWidth           = Cva6IdWidth;
     ret.AxiUserWidth          = cfg.AxiUserWidth;
     ret.CvxifEn               = 0;
     ret.DmBaseAddress         = AmDbg;

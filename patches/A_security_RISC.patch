@@ -1,0 +1,218 @@
+diff --git a/mbedtls-key-leak/get_offsets.py b/mbedtls-key-leak/get_offsets.py
+index 3dc2e26..02f7e69 100755
+--- a/mbedtls-key-leak/get_offsets.py
++++ b/mbedtls-key-leak/get_offsets.py
+@@ -1,40 +1,68 @@
+-#! /usr/bin/env python3
++#!/usr/bin/env python3
++import os
++import subprocess
++import sys
+ 
+-
+-from pwn import *
+-
+-#LIB = "./mbedtls/library/libmbedtls.so"
+ LIB = "./libmbedtls.so.8"
+ 
+ def get_offsets(libpath):
+-    context.log_level = 'error'
+-    context.arch = 'riscv'
+-    e = ELF(LIB)
+-    ctr_drbg_init_offset = e.functions['ctr_drbg_init'].address
+-    print(f"[+] CTR_DRBG_INIT_OFFSET @ 0x{ctr_drbg_init_offset:x}")
++    # Find workspace root relative to this file
++    cur_dir = os.path.dirname(os.path.abspath(__file__))
++    workspace_root = os.path.abspath(os.path.join(cur_dir, "../../../.."))
++    readelf_bin = os.path.join(workspace_root, "sw/deps/cva6-sdk/buildroot/output/host/bin/riscv64-buildroot-linux-gnu-readelf")
++    if not os.path.exists(readelf_bin):
++        readelf_bin = "readelf"
++
++    try:
++        out = subprocess.check_output([readelf_bin, "-s", libpath]).decode("utf-8", errors="ignore")
++    except Exception as e:
++        print(f"[-] Error running readelf: {e}")
++        sys.exit(1)
++
++    mpi_exp_mod_offset = None
++    ctr_drbg_init_offset = None
+ 
+-    mpi_exp_mod_offset = e.functions['mpi_exp_mod'].address
++    for line in out.splitlines():
++        if "mpi_exp_mod" in line and "GLOBAL" in line:
++            parts = line.split()
++            if len(parts) >= 8:
++                mpi_exp_mod_offset = int(parts[1], 16)
++        if "ctr_drbg_init" in line and "GLOBAL" in line:
++            parts = line.split()
++            if len(parts) >= 8 and parts[7] == "ctr_drbg_init":
++                ctr_drbg_init_offset = int(parts[1], 16)
++
++    if mpi_exp_mod_offset is None or ctr_drbg_init_offset is None:
++        print("[-] Could not find function symbols in elf")
++        sys.exit(1)
++
++    print(f"[+] CTR_DRBG_INIT_OFFSET @ 0x{ctr_drbg_init_offset:x}")
+     print(f"[+] MPI_EXP_MOD_OFFSET @ 0x{mpi_exp_mod_offset:x}")
+ 
+     # c.nop, c.nop, c.nop, c.nop, unimpl, c.nop
+     pattern_bytes = b"\x01\x00\x01\x00\x01\x00\x01\x00\x00\x00\x01\x00"
+ 
+-    patterns_found = e.search(pattern_bytes, executable=True)
+-    one_offset = next(patterns_found, None)
+-    if one_offset is None:
++    with open(libpath, "rb") as f:
++        data = f.read()
++
++    # Search for the byte pattern
++    idx = data.find(pattern_bytes)
++    if idx == -1:
+         print("\033[91m[-] Could not find ONE_OFFSET address\033[0m")
+-        exit(1)
+-    one_offset += 8  # increase to the the actual point of failure
+-    # assert that we only found one possible address
+-    assert next(patterns_found, None)  == None
++        sys.exit(1)
++
++    one_offset = idx + 8
++    
++    # Assert that it is unique
++    if data.find(pattern_bytes, idx + 1) != -1:
++        print("[-] Multiple occurrences of ONE_OFFSET pattern found!")
++        sys.exit(1)
++
+     print(f"[+] ONE_OFFSET @ 0x{one_offset:x}")
+     return ctr_drbg_init_offset, mpi_exp_mod_offset, one_offset
+-    
++
+ def main():
+     get_offsets(LIB)
+-    
+-
+-
+ 
+ if __name__ == "__main__":
+     main()
+diff --git a/rlibsc.h b/rlibsc.h
+index 32f2585..985fab9 100644
+--- a/rlibsc.h
++++ b/rlibsc.h
+@@ -124,4 +124,12 @@ static inline void iflush(void* addr) {
+ // -----------------------------
+ #elif defined(U74)
+ 
++static inline void flush(void *addr) {
++  asm volatile("fence" ::: "memory");
++}
++
++static inline void iflush(void *addr) {
++  asm volatile("fence.i" ::: "memory");
++}
++
+ #endif
+\ No newline at end of file
+diff --git a/timer-evaluation/Makefile b/timer-evaluation/Makefile
+index 5b9e468..239a145 100644
+--- a/timer-evaluation/Makefile
++++ b/timer-evaluation/Makefile
+@@ -1,10 +1,10 @@
+ all: main timer-resolution
+ 
+ main: main.c
+-	gcc main.c -Os -o main
++	/home/emanuele/Desktop/cheshire_zcu208/sw/deps/cva6-sdk/buildroot/output/host/bin/riscv64-buildroot-linux-gnu-gcc main.c -Os -o main
+ 
+ timer-resolution: timer-resolution.c
+-	gcc timer-resolution.c -Os -o timer-resolution
++	/home/emanuele/Desktop/cheshire_zcu208/sw/deps/cva6-sdk/buildroot/output/host/bin/riscv64-buildroot-linux-gnu-gcc timer-resolution.c -Os -o timer-resolution
+ 
+ clean:
+ 	rm -f main timer-resolution
+diff --git a/timer-evaluation/main.c b/timer-evaluation/main.c
+index f80bcc0..567e2c1 100644
+--- a/timer-evaluation/main.c
++++ b/timer-evaluation/main.c
+@@ -5,14 +5,14 @@
+ #include <time.h>
+ #include <unistd.h>
+ 
+-#define NUM_MEASURE 10000
++#define NUM_MEASURE 200000
+ #define CTR_THREAD_SPINS 100000
+ 
+ inline uint64_t as_nanoseconds(struct timespec *ts) {
+   return ts->tv_sec * (uint64_t)1000000000L + ts->tv_nsec;
+ }
+ 
+-static inline void payload() { REP1K(asm volatile("nop");) }
++static inline void payload() { REP4K(asm volatile("nop");) }
+ 
+ void main() {
+   uint32_t acc[] = {0, 0, 0, 0, 0, 0, 0};
+@@ -70,7 +70,7 @@ void main() {
+   printf("[+] rdtime: %d ticks\n", acc[2] / NUM_MEASURE);
+   printf("[+] get_time_perf: %d ticks\n", acc[3] / NUM_MEASURE);
+   printf("[+] get_cycle_perf: %d ticks\n", acc[4] / NUM_MEASURE);
+-  printf("[+] get_retire_perf: %d retired in interval with 1000 nops\n",
++  printf("[+] get_retire_perf: %d retired in interval with 4096 nops\n",
+          acc[5] / NUM_MEASURE);
+   printf("[+] count_thread %d spins in %dns\n", CTR_THREAD_SPINS,
+          acc[6] / NUM_MEASURE);
+diff --git a/timer-evaluation/timer-resolution.c b/timer-evaluation/timer-resolution.c
+index 3678ece..8335be5 100644
+--- a/timer-evaluation/timer-resolution.c
++++ b/timer-evaluation/timer-resolution.c
+@@ -28,6 +28,7 @@ int main() {
+     for (size_t i = 0; i < TESTS; i++) {
+       clock_gettime(CLOCK_REALTIME, &stamp);
+       size_t val = as_nanoseconds(&stamp);
++      //printf("%d of 1000000 of clock_gettime val: %zu\n", i, val);
+       hist[val % div]++;
+     }
+ 
+@@ -60,6 +61,7 @@ int main() {
+ 
+     for (size_t i = 0; i < TESTS; i++) {
+       size_t val = rdcycle();
++      //printf("%d of 1000000 of rdcycle val: %zu\n", i, val);
+       hist[val % div]++;
+     }
+ 
+@@ -92,6 +94,7 @@ int main() {
+ 
+     for (size_t i = 0; i < TESTS; i++) {
+       size_t val = get_cycle_perf();
++      //printf("%d of 1000000 of get_cycle_perf val: %zu\n", i, val);
+       hist[val % div]++;
+     }
+ 
+@@ -124,6 +127,7 @@ int main() {
+ 
+     for (size_t i = 0; i < TESTS; i++) {
+       size_t val = rdtime();
++      //printf("%d of 1000000 of rdtime val: %zu\n", i, val);
+       hist[val % div]++;
+     }
+ 
+@@ -156,6 +160,7 @@ int main() {
+ 
+     for (size_t i = 0; i < TESTS; i++) {
+       size_t val = get_time_perf();
++      //printf("%d of 1000000 of get_time_perf val: %zu\n", i, val);
+       hist[val % div]++;
+     }
+ 
+diff --git a/mbedtls-key-leak/attack_offsets.h b/mbedtls-key-leak/attack_offsets.h
+new file mode 100644
+index 0000000..2009226
+--- /dev/null
++++ b/mbedtls-key-leak/attack_offsets.h
+@@ -0,0 +1,8 @@
++// generated automatically by cross-compiler build pipeline
++#ifndef ATTACK_OFFSETS_H
++#define ATTACK_OFFSETS_H
++
++#define MPI_EXP_MOD_OFFSET 0x1d000
++#define ONE_OFFSET 0x1d7b6
++
++#endif /* !ATTACK_OFFSETS_H */

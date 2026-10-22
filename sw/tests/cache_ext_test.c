@@ -43,13 +43,148 @@ void trap_vector(void) {
     }
 }
 
+void print_str(const char *str) {
+    uint64_t len = 0;
+    while (str[len] != '\0') len++;
+    uart_write_str(&__base_uart, (void *)str, len);
+    uart_write_flush(&__base_uart);
+}
+
+void print_dec(uint64_t val) {
+    char buf[20];
+    int i = 20;
+    do {
+        buf[--i] = '0' + (val % 10);
+        val /= 10;
+    } while (val != 0);
+    uart_write_str(&__base_uart, &buf[i], 20 - i);
+}
+
 void print_result(const char *name, int result) {
-    uart_write_str(&__base_uart, name, 15);
+    print_str(name);
     if (result) {
-        uart_write_str(&__base_uart, ": [TRAPPED] Not Supported\r\n", 28);
+        print_str(": [TRAPPED] Not Supported\r\n");
     } else {
-        uart_write_str(&__base_uart, ": [  OK   ] SUPPORTED!\r\n", 26);
+        print_str(": [  OK   ] SUPPORTED!\r\n");
     }
+}
+
+// ---------------------------------------------------------------------------
+// Zicbom timing check: does a CBO actually change the cache state?
+// ---------------------------------------------------------------------------
+
+#define TIMING_ROUNDS 100
+
+// Probe target in cacheable memory (DRAM for .dram.elf), on its own cache lines
+static volatile uint64_t probe_buf[64] __attribute__((aligned(64)));
+
+// CBOs take their address in a0 (encodings are for rs1 = a0)
+static inline void cbo_inval(volatile void *p) {
+    __asm__ volatile ("mv a0, %0\n .word 0x0005200f" : : "r" (p) : "a0", "memory");
+}
+static inline void cbo_clean(volatile void *p) {
+    __asm__ volatile ("mv a0, %0\n .word 0x0015200f" : : "r" (p) : "a0", "memory");
+}
+static inline void cbo_flush(volatile void *p) {
+    __asm__ volatile ("mv a0, %0\n .word 0x0025200f" : : "r" (p) : "a0", "memory");
+}
+static inline void prefetch_r(volatile void *p) {
+    __asm__ volatile ("mv a0, %0\n .word 0x00156013" : : "r" (p) : "a0", "memory");
+}
+
+// Cycles taken by a single load. CVA6 executes CSR reads at commit, in order,
+// so the second rdcycle only runs after the load has returned its data.
+static inline uint64_t time_load(volatile uint64_t *p) {
+    uint64_t t0, t1, v;
+    __asm__ volatile (
+        "fence\n"
+        "rdcycle %0\n"
+        "ld      %2, 0(%3)\n"
+        "rdcycle %1\n"
+        : "=&r" (t0), "=&r" (t1), "=&r" (v)
+        : "r" (p)
+        : "memory");
+    return t1 - t0;
+}
+
+// Loads faster than this are counted as cache hits (hit ~4 cycles, miss ~29)
+#define HIT_THRESHOLD 15
+
+enum {
+    CASE_HIT, CASE_FLUSH, CASE_INVAL, CASE_CLEAN,
+    CASE_FLUSH_DELAY, CASE_INVAL_DELAY, CASE_PREFETCH
+};
+
+// Same busy-wait used by the delayed cases, so they differ only by the CBO
+static inline void delay(void) {
+    for (volatile int i = 0; i < 200; i++);
+}
+
+static uint64_t measure_once(int c, volatile uint64_t *p) {
+    (void)*p; // bring the line into the cache
+    (void)*p;
+    switch (c) {
+        case CASE_FLUSH:       cbo_flush(p); break;
+        case CASE_INVAL:       cbo_inval(p); break;
+        case CASE_CLEAN:       cbo_clean(p); break;
+        case CASE_FLUSH_DELAY: cbo_flush(p); delay(); break;
+        case CASE_INVAL_DELAY: cbo_inval(p); delay(); break;
+        case CASE_PREFETCH:    cbo_flush(p); prefetch_r(p); delay(); break;
+        default: break;
+    }
+    __asm__ volatile ("fence" ::: "memory");
+    return time_load(p);
+}
+
+static void run_timing_case(int c, const char *name, const char *expect) {
+    uint64_t samples[TIMING_ROUNDS];
+    uint64_t min = ~0ULL, max = 0, sum = 0;
+    int hits = 0;
+    trap_occurred = 0;
+    // Measure first, print afterwards, so UART traffic doesn't disturb the rounds
+    for (int r = 0; r < TIMING_ROUNDS; r++) {
+        samples[r] = measure_once(c, &probe_buf[0]);
+    }
+    for (int r = 0; r < TIMING_ROUNDS; r++) {
+        uint64_t t = samples[r];
+        if (t < min) min = t;
+        if (t > max) max = t;
+        if (t < HIT_THRESHOLD) hits++;
+        sum += t;
+    }
+    print_str(name);
+    print_str(" min=");  print_dec(min);
+    print_str(" avg=");  print_dec(sum / TIMING_ROUNDS);
+    print_str(" max=");  print_dec(max);
+    print_str(" hits=");  print_dec(hits);
+    print_str("/");       print_dec(TIMING_ROUNDS);
+    print_str("  (expected: ");
+    print_str(expect);
+    print_str(")");
+    if (trap_occurred) print_str("  [TRAPPED - result invalid]");
+    print_str("\r\n    rounds:");
+    for (int r = 0; r < TIMING_ROUNDS; r++) {
+        print_str(" ");
+        print_dec(samples[r]);
+    }
+    print_str("\r\n");
+}
+
+static void run_cbo_timing(void) {
+    print_str("\r\n--- Zicbom timing check (cycles per load, ");
+    print_dec(TIMING_ROUNDS);
+    print_str(" rounds) ---\r\nprobe address: ");
+    uart_write_hex(&__base_uart, (uint64_t)&probe_buf[0]);
+
+    run_timing_case(CASE_HIT,      "warm load          ", "HIT, baseline");
+    run_timing_case(CASE_FLUSH,    "after cbo.flush    ", "MISS");
+    run_timing_case(CASE_INVAL,    "after cbo.inval    ", "MISS");
+    run_timing_case(CASE_CLEAN,    "after cbo.clean    ", "HIT, line kept");
+    run_timing_case(CASE_FLUSH_DELAY, "cbo.flush + delay  ", "MISS");
+    run_timing_case(CASE_INVAL_DELAY, "cbo.inval + delay  ", "MISS");
+    run_timing_case(CASE_PREFETCH, "flush + prefetch.r ", "MISS, prefetch.r is a no-op here");
+
+    print_str("Zicbom works if flush/inval are clearly slower than the warm load.\r\n");
 }
 
 int main(void) {
@@ -57,8 +192,7 @@ int main(void) {
     uint64_t reset_freq = clint_get_core_freq(rtc_freq, 2500);
     uart_init(&__base_uart, reset_freq, __BOOT_BAUDRATE);
 
-    uart_write_str(&__base_uart, "\r\n--- RISC-V Extension Discovery (Thesis Suite) ---\r\n", 54);
-    uart_write_flush(&__base_uart);
+    print_str("\r\n--- RISC-V Extension Discovery (Thesis Suite) ---\r\n");
 
     uint64_t dummy_var = 0;
     uint64_t addr = (uint64_t)&dummy_var;
@@ -67,40 +201,36 @@ int main(void) {
     uint64_t dram_addr = 0x80000000;
 
     // 1. Zicbom (Cache Management)
-    uart_write_str(&__base_uart, "Testing Zicbom (clean) on DRAM...\r\n", 35);
-    uart_write_flush(&__base_uart);
+    print_str("Testing Zicbom (clean) on DRAM...\r\n");
     trap_occurred = 0;
     __asm__ volatile ("mv a0, %0\n .word 0x0015200f" : : "r" (dram_addr) : "a0"); // cbo.clean
     print_result("Zicbom (clean) ", trap_occurred);
 
-    uart_write_str(&__base_uart, "Testing Zicbom (flush) on DRAM...\r\n", 35);
-    uart_write_flush(&__base_uart);
+    print_str("Testing Zicbom (flush) on DRAM...\r\n");
     trap_occurred = 0;
     __asm__ volatile ("mv a0, %0\n .word 0x0025200f" : : "r" (dram_addr) : "a0"); // cbo.flush
     print_result("Zicbom (flush) ", trap_occurred);
 
     // 2. Zicboz (Zeroing)
-    uart_write_str(&__base_uart, "Testing Zicboz (zero) on DRAM...\r\n", 34);
-    uart_write_flush(&__base_uart);
+    print_str("Testing Zicboz (zero) on DRAM...\r\n");
     trap_occurred = 0;
     __asm__ volatile ("mv a0, %0\n .word 0x0045200f" : : "r" (dram_addr) : "a0"); // cbo.zero
     print_result("Zicboz (zero)  ", trap_occurred);
 
     // 3. Zicbop (Prefetch)
-    uart_write_str(&__base_uart, "Testing Zicbop (prefetch) on DRAM...\r\n", 38);
-    uart_write_flush(&__base_uart);
+    print_str("Testing Zicbop (prefetch) on DRAM...\r\n");
     trap_occurred = 0;
     __asm__ volatile ("mv a0, %0\n .word 0x00156013" : : "r" (dram_addr) : "a0"); // prefetch.r
     print_result("Zicbop (read)  ", trap_occurred);
 
     // 4. Zbc (Carry-less Mult)
-    uart_write_str(&__base_uart, "Testing Zbc (clmul)...\r\n", 24);
-    uart_write_flush(&__base_uart);
+    print_str("Testing Zbc (clmul)...\r\n");
     trap_occurred = 0;
     __asm__ volatile ("mv a1, %0\n mv a2, %0\n .word 0x0A259533" : : "r" (dummy_var) : "a0", "a1", "a2"); // clmul
     print_result("Zbc (clmul)    ", trap_occurred);
 
-    uart_write_str(&__base_uart, "--- End of Suite ---\r\n", 22);
-    uart_write_flush(&__base_uart);
+    run_cbo_timing();
+
+    print_str("--- End of Suite ---\r\n");
     return 0;
 }

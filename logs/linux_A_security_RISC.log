@@ -1,0 +1,1553 @@
+ /\___/\       Boot mode:       0
+( o   o )      Real-time clock: 1000000 Hz
+(  =^=  )      System clock:    50035000 Hz
+(        )     Read global ptr: 0x00000000
+(    P    )    Read pointer:    0x00000000
+(  U # L   )   Read argument:   0x00000000
+(    P      )
+(           ))))))))))
+
+[ZSL] Launch firmware at 80000000 with device tree at 8f000000
+
+OpenSBI v0.9
+   ____                    _____ ____ _____
+  / __ \                  / ____|  _ \_   _|
+ | |  | |_ __   ___ _ __ | (___ | |_) || |
+ | |  | | '_ \ / _ \ '_ \ \___ \|  _ < | |
+ | |__| | |_) |  __/ | | |____) | |_) || |_
+  \____/| .__/ \___|_| |_|_____/|____/_____|
+        | |
+        |_|
+
+Platform Name             : CHESHIRE RISC-V
+Platform Features         : medeleg
+Platform HART Count       : 1
+Platform IPI Device       : aclint-mswi
+Platform Timer Device     : aclint-mtimer @ 1000000Hz
+Platform Console Device   : uart8250
+Platform HSM Device       : ---
+Platform Reboot Device    : ---
+Platform Shutdown Device  : ---
+Firmware Base             : 0x80000000
+Firmware Size             : 220 KB
+Runtime SBI Version       : 0.3
+
+Domain0 Name              : root
+Domain0 Boot HART         : 0
+Domain0 HARTs             : 0*
+Domain0 Region00          : 0x000000000204bff8-0x000000000204bfff (I)
+Domain0 Region01          : 0x0000000002044000-0x000000000204400f (I)
+Domain0 Region02          : 0x0000000002040000-0x0000000002043fff (I)
+Domain0 Region03          : 0x0000000080000000-0x000000008003ffff ()
+Domain0 Region04          : 0x0000000000000000-0xffffffffffffffff (R,W,X)
+Domain0 Next Address      : 0x0000000080200000
+Domain0 Next Arg1         : 0x0000000080800000
+Domain0 Next Mode         : S-mode
+Domain0 SysReset          : yes
+
+Boot HART ID              : 0
+Boot HART Domain          : root
+Boot HART ISA             : rv64imafdcbsuh
+Boot HART Features        : scounteren,mcounteren,mcountinhibit
+Boot HART PMP Count       : 0
+Boot HART PMP Granularity : 0
+Boot HART PMP Address Bits: 0
+Boot HART MHPM Count      : 6
+Boot HART MIDELEG         : 0x0000000000000666
+Boot HART MEDELEG         : 0x0000000000f0b509
+
+
+U-Boot 2021.07-rc4-gcb3f747f5e (Jul 10 2026 - 12:43:03 +0200)
+
+CPU:   rv64imafdc
+DRAM:  4 GiB
+bind node reserved-memory
+Device 'reserved-memory' has no compatible string
+bind node chosen
+Device 'chosen' has no compatible string
+bind node memory@80000000
+Device 'memory@80000000' has no compatible string
+bind node cpus
+Device 'cpus' has no compatible string
+bind node soc
+   - attempt to match compatible string 'eth,cheshire-bare-soc'
+   - attempt to match compatible string 'simple-bus'
+   - found match at 'simple_bus': 'simple-bus' matches 'simple-bus'
+bind node debug@0
+   - attempt to match compatible string 'riscv,debug-013'
+No match for node 'debug@0'
+bind node axi_llc@3001000
+   - attempt to match compatible string 'eth,axi-llc'
+No match for node 'axi_llc@3001000'
+bind node memory-controller@3006000
+   - attempt to match compatible string 'eth,ddr-link'
+No match for node 'memory-controller@3006000'
+bind node serial@3002000
+   - attempt to match compatible string 'ns16550a'
+   - found match at 'ns16550_serial': 'ns16550' matches 'ns16550a'
+Bound device serial@3002000 to soc
+bind node i2c@3003000
+   - attempt to match compatible string 'eth,i2c'
+No match for node 'i2c@3003000'
+bind node spi@3004000
+   - attempt to match compatible string 'opentitan,spi-host'
+   - found match at 'opentitan_qspi': 'opentitan,spi-host' matches 'opentitan,spi-host'
+bind node nor@1
+   - attempt to match compatible string 'mt25qu01g'
+   - attempt to match compatible string 'jedec,spi-nor'
+   - found match at 'jedec_spi_nor': 'jedec,spi-nor' matches 'jedec,spi-nor'
+Bound device nor@1 to spi@3004000
+Bound device spi@3004000 to soc
+bind node vga@3007000
+   - attempt to match compatible string 'eth,axi-vga'
+No match for node 'vga@3007000'
+bind node clint@2040000
+   - attempt to match compatible string 'riscv,clint0'
+No match for node 'clint@2040000'
+bind node interrupt-controller@4000000
+   - attempt to match compatible string 'sifive,plic-1.0.0'
+   - attempt to match compatible string 'riscv,plic0'
+No match for node 'interrupt-controller@4000000'
+Bound device soc to root_driver
+bind node cpu@0
+   - attempt to match compatible string 'eth,ariane'
+   - attempt to match compatible string 'riscv'
+   - found match at 'riscv_cpu': 'riscv' matches 'riscv'
+Bound device riscv_timer to cpu@0
+Bound device cpu@0 to cpus
+Bound device cpus to root_driver
+MMC:   0
+   - not found
+
+Loading Environment from nowhere... OK
+In:    serial@3002000
+Out:   serial@3002000
+Err:   serial@3002000
+Net:   No ethernet found.
+Hit any key to stop autoboot:  5  4  3  2  1  0 
+No MMC device available
+0
+   - 0 'spi@3004000'
+   - found
+opentitan_qspi spi@3004000: spi_find_chip_select: plat=00000000ff774520, cs=1
+opentitan_qspi spi@3004000: spi_find_bus_and_cs: No cs 2
+0
+   - 0 'spi@3004000'
+   - found
+opentitan_qspi spi@3004000: clock-frequency = 50000000 Hz
+opentitan_qspi spi@3004000: max-frequency = 25000000 Hz
+opentitan_qspi spi@3004000: regs @ 0x3004000
+opentitan_qspi spi@3004000: opentitan_qspi_probe: Setting CS to 2
+opentitan_qspi spi@3004000: regs = 3004000, unused_cs = 2 used_cs = 0
+opentitan_qspi spi@3004000: spi_find_chip_select: plat=00000000ff774520, cs=1
+opentitan_qspi spi@3004000: spi_get_bus_and_cs: Binding new device 'spi_flash@0:2', busnum=0, cs=2, driver=jedec_spi_nor
+Bound device spi_flash@0:2 to spi@3004000
+opentitan_qspi spi@3004000: Saving SPI clkdiv to 18
+opentitan_qspi spi@3004000: Saving SPI mode to 3
+jedec_spi_nor spi_flash@0:2: opentitan_qspi_claim_bus: Set mode and speed for parent_priv->used_cs=2 , configopts=cfff0018
+jedec_spi_nor spi_flash@0:2: opentitan_qspi_claim_bus: Set mode and speed for parent_priv->used_cs=2 , configopts=cfff0018
+opentitan_qspi spi@3004000: opentitan_qspi_xfer_single: Setting CS to 2
+opentitan_qspi spi@3004000: opentitan_qspi_xfer_single: Setting CS to 2
+jedec_spi_nor spi_flash@0:2: unrecognized JEDEC id bytes: 00, 00, 00
+spi_get_bus_and_cs: Error path, created=1, device 'spi_flash@0:2'
+Failed to initialize SPI flash at 0:2 (error -2)
+Wrong Image Format for bootm command
+ERROR: can't get kernel image!
+=> bootm 0x84000000 - 0x8F000000
+## Booting kernel from Legacy Image at 84000000 ...
+   Image Name:   CV64A6Linux
+   Image Type:   RISC-V Linux Kernel Image (gzip compressed)
+   Data Size:    19541683 Bytes = 18.6 MiB
+   Load Address: 80200000
+   Entry Point:  80200000
+   Verifying Checksum ... OK
+## Flattened Device Tree blob at 8f000000
+   Booting using the fdt blob at 0x8f000000
+   Uncompressing Kernel Image
+   Loading Device Tree to 00000000bf800000, end 00000000bf803a11 ... OK
+
+Starting kernel ...
+
+serial@3002000: When removing: flags=600, drv->flags=0, err=-129
+spi@3004000: When removing: flags=600, drv->flags=0, err=-129
+soc: When removing: flags=600, drv->flags=4, err=-129
+riscv_timer: When removing: flags=600, drv->flags=4, err=-129
+cpu@0: When removing: flags=600, drv->flags=4, err=-129
+cpus: When removing: flags=600, drv->flags=0, err=-129
+root_driver: When removing: flags=600, drv->flags=0, err=-129
+[    0.000000] Linux version 5.10.7 (emanuele@emanuele-ubuntu) (riscv64-buildroot-linux-gnu-gcc.br_real (Buildroot 2021.08) 10.3.0, GNU ld (GNU Binutils) 2.36.1) #4 SMP Fri Jul 10 13:15:04 CEST 2026
+[    0.000000] OF: fdt: Ignoring memory range 0x80000000 - 0x80200000
+[    0.000000] earlycon: uart8250 at MMIO32 0x0000000003002000 (options '')
+[    0.000000] printk: bootconsole [uart8250] enabled
+[    0.000000] efi: UEFI not found.
+[    0.000000] Zone ranges:
+[    0.000000]   DMA32    [mem 0x0000000080200000-0x00000000ffffffff]
+[    0.000000]   Normal   [mem 0x0000000100000000-0x000000017fffffff]
+[    0.000000] Movable zone start for each node
+[    0.000000] Early memory node ranges
+[    0.000000]   node   0: [mem 0x0000000080200000-0x000000017fffffff]
+[    0.000000] Initmem setup node 0 [mem 0x0000000080200000-0x000000017fffffff]
+[    0.000000] software IO TLB: mapped [mem 0x00000000fbfff000-0x00000000fffff000] (64MB)
+[    0.000000] SBI specification v0.3 detected
+[    0.000000] SBI implementation ID=0x1 Version=0x9
+[    0.000000] SBI v0.2 TIME extension detected
+[    0.000000] SBI v0.2 IPI extension detected
+[    0.000000] SBI v0.2 RFENCE extension detected
+[    0.000000] SBI v0.2 HSM extension detected
+[    0.000000] riscv: ISA extensions acdfim
+[    0.000000] riscv: ELF capabilities acdfim
+[    0.000000] percpu: Embedded 15 pages/cpu s23000 r8192 d30248 u61440
+[    0.000000] Built 1 zonelists, mobility grouping on.  Total pages: 1033735
+[    0.000000] Kernel command line: console=ttyS0,115200 earlycon=uart8250,mmio32,0x3002000 random.trust_cpu=on rw
+[    0.000000] Dentry cache hash table entries: 524288 (order: 10, 4194304 bytes, linear)
+[    0.000000] Inode-cache hash table entries: 262144 (order: 9, 2097152 bytes, linear)
+[    0.000000] Sorting __ex_table...
+[    0.000000] mem auto-init: stack:off, heap alloc:off, heap free:off
+[    0.000000] Memory: 4035260K/4192256K available (2568K kernel code, 3481K rwdata, 2048K rodata, 166K init, 241K bss, 156996K reserved, 0K cma-reserved)
+[    0.000000] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=1, Nodes=1
+[    0.000000] rcu: Hierarchical RCU implementation.
+[    0.000000] rcu: 	RCU event tracing is enabled.
+[    0.000000] rcu: 	RCU restricting CPUs from NR_CPUS=8 to nr_cpu_ids=1.
+[    0.000000] rcu: RCU calculated value of scheduler-enlistment delay is 10 jiffies.
+[    0.000000] rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=1
+[    0.000000] NR_IRQS: 64, nr_irqs: 64, preallocated irqs: 0
+[    0.000000] riscv-intc: 64 local interrupts mapped
+[    0.000000] plic: interrupt-controller@4000000: mapped 20 interrupts with 1 handlers for 2 contexts.
+[    0.000000] random: get_random_bytes called from start_kernel+0x2a2/0x40c with crng_init=0
+[    0.000000] riscv_timer_init_dt: Registering clocksource cpuid [0] hartid [0]
+[    0.000000] clocksource: riscv_clocksource: mask: 0xffffffffffffffff max_cycles: 0x1d854df40, max_idle_ns: 3526361616960 ns
+[    0.000498] sched_clock: 64 bits at 1000kHz, resolution 1000ns, wraps every 2199023255500ns
+[    0.015291] Calibrating delay loop (skipped), value calculated using timer frequency.. 2.00 BogoMIPS (lpj=10000)
+[    0.031178] pid_max: default: 32768 minimum: 301
+[    0.051934] Mount-cache hash table entries: 8192 (order: 4, 65536 bytes, linear)
+[    0.068257] Mountpoint-cache hash table entries: 8192 (order: 4, 65536 bytes, linear)
+[    0.180802] rcu: Hierarchical SRCU implementation.
+[    0.204538] EFI services will not be available.
+[    0.220293] smp: Bringing up secondary CPUs ...
+[    0.228257] smp: Brought up 1 node, 1 CPU
+[    0.263693] devtmpfs: initialized
+[    0.364783] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 19112604462750000 ns
+[    0.379702] futex hash table entries: 256 (order: 2, 16384 bytes, linear)
+[    1.035091] HugeTLB registered 2.00 MiB page size, pre-allocated 0 pages
+[    1.292212] clocksource: Switched to clocksource riscv_clocksource
+[   34.391739] workingset: timestamp_bits=62 max_order=20 bucket_order=0
+[   37.087975] io scheduler mq-deadline registered
+[   37.096640] io scheduler kyber registered
+[   41.119549] Serial: 8250/16550 driver, 4 ports, IRQ sharing disabled
+[   41.270768] printk: console [ttyS0] disabled
+[   41.280128] 3002000.serial: ttyS0 at MMIO 0x3002000 (irq = 1, base_baud = 3125000) is a 16550A
+[   41.294410] printk: console [ttyS0] enabled
+[   41.294410] printk: console [ttyS0] enabled
+[   41.306774] printk: bootconsole [uart8250] disabled
+[   41.306774] printk: bootconsole [uart8250] disabled
+[   41.412335] opentitan_qspi 3004000.spi: cs1 >= max 1
+[   41.420935] spi_master spi0: spi_device register error /soc/spi@3004000/nor@1
+[   41.431928] spi_master spi0: Failed to create SPI device for /soc/spi@3004000/nor@1
+[   41.443003] opentitan_qspi 3004000.spi: initialized; err_irq = 19, evt_irq = 20, num cs = 2, byte order = 1
+[   41.456326] opentitan_qspi 3004000.spi: Params: regs = 0x4003000, clk_freq = 50000000, max_freq = 25000000, cs_state = 0
+[   41.471461] opentitan_qspi 3004000.spi: Params: used_cs = 0, unused_cs = 2
+[   41.481554] opentitan_qspi 3004000.spi: Status reg @ 0x4003014: 0x91500000
+[   41.617102] Freeing unused kernel memory: 164K
+[   41.630765] Run /init as init process
+Starting syslogd: OK
+Starting klogd: OK
+Running sysctl: OK
+Saving random seed: [   52.946078] random: dd: uninitialized urandom read (512 bytes read)
+OK
+Starting rpcbind: OK
+ifconfig: socket: Function not implemented
+NFS preparation skipped, OK
+
+[4;37m[PULP Platform] Welcome to Linux on [1m[38;5;208mC[38;5;209mh[38;5;210me[38;5;211ms[38;5;212mh[38;5;177mi[38;5;141mr[38;5;105me[m
+
+# [   59.432395] ttyS ttyS0: 1 input overrun(s)
+echo 128 > /proc/[   61.880359] ttyS ttyS0: 17 input overrun(s)
+
+-/bin/sh: can't create /proc/: Is a directory
+# [   63.607353] ttyS ttyS0: 1 input overrun(s)
+echo 128 > /proc/sys/vm/nr_hugepages
+# [   67.822045] ttyS ttyS0: 37 input overrun(s)
+echo 128 > /proc/sys/vm/nr_hugepages[   67.975094] random: fast init done
+
+# [   70.332854] ttyS ttyS0: 37 input overrun(s)
+ls
+[0;0mREADME.md[m  [1;34metc[m        [1;36mlib64[m      [1;34mmnt[m        [1;34mroot[m       [1;34msys[m        [1;34musr[m
+[1;34mbin[m        [1;32minit[m       [1;36mlinuxrc[m    [1;34mopt[m        [1;34mrun[m        [1;32mtetris[m     [1;34mvar[m
+[1;34mdev[m        [1;34mlib[m        [1;34mmedia[m      [1;34mproc[m       [1;34msbin[m       [1;34mtmp[m
+# [   72.749340] ttyS ttyS0: 3 input overrun(s)
+ls[   74.386500] ttyS ttyS0: 2 input overrun(s)
+[J[J[   82.733386] ttyS ttyS0: 2 input overrun(s)
+cd u[   83.804488] ttyS ttyS0: 4 input overrun(s)
+s# cd usr/[Jb[   84.846514] ttyS ttyS0: 3 input overrun(s)
+# cd usr/bin/[J[   86.284922] ttyS ttyS0: 1 input overrun(s)
+S# cd usr/bin/SACTV/[J[   87.506249] ttyS ttyS0: 2 input overrun(s)
+
+# .[   88.861070] ttyS ttyS0: 2 input overrun(s)
+/[   89.991526] ttyS ttyS0: 2 input overrun(s)
+
+benchmark_output/   eviction_histogram  scripts/            timing_histogram
+# ./[J
+benchmark_output/   eviction_histogram  scripts/            timing_histogram
+# ./[J[   91.016261] ttyS ttyS0: 2 input overrun(s)
+s# ./scripts/[J[   92.482532] ttyS ttyS0: 2 input overrun(s)
+r# ./scripts/run_benchmark.sh [J
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: grep [-HhnlLoqvsrRiwFE] [-m N] [-A/B/C N] PATTERN/-e PATTERN.../-f FILE [FILE]...
+
+Search for PATTERN in FILEs (or stdin)
+
+	-H	Add 'filename:' prefix
+	-h	Do not add 'filename:' prefix
+	-n	Add 'line_no:' prefix
+	-l	Show only names of files that match
+	-L	Show only names of files that don't match
+	-c	Show only count of matching lines
+	-o	Show only the matching part of line
+	-q	Quiet. Return 0 if PATTERN is found, 1 otherwise
+	-v	Select non-matching lines
+	-s	Suppress open and read errors
+	-r	Recurse
+	-R	Recurse and dereference symlinks
+	-i	Ignore case
+	-w	Match whole words only
+	-x	Match whole lines only
+	-F	PATTERN is a literal (not regexp)
+	-E	PATTERN is an extended regexp
+	-m N	Match up to N times per file
+	-A N	Print N lines of trailing context
+	-B N	Print N lines of leading context
+	-C N	Same as '-A N -B N'
+	-e PTRN	Pattern to match
+	-f FILE	Read pattern from file
+Finished
+# [  163.444757] ttyS ttyS0: 3 input overrun(s)
+./scripts/run_benchmark.sh CHESHIRE CHESHIRE
+i is 0
+Executing: file 00_AccOne0_AccTwo0_AccThr0_Aff0_2025
+  PID USER       VSZ STAT COMMAND
+    1 root      2952 S    init
+    2 root         0 SW   [kthreadd]
+    3 root         0 IW<  [rcu_gp]
+    4 root         0 IW<  [rcu_par_gp]
+    5 root         0 IW   [kworker/0:0-eve]
+    6 root         0 IW<  [kworker/0:0H]
+    7 root         0 IW   [kworker/u2:0-ev]
+    8 root         0 IW<  [mm_percpu_wq]
+    9 root         0 SW   [ksoftirqd/0]
+   10 root         0 IW   [rcu_sched]
+   11 root         0 SW   [migration/0]
+   12 root         0 SW   [cpuhp/0]
+   13 root         0 SW   [kdevtmpfs]
+   14 root         0 SW   [oom_reaper]
+   15 root         0 IW<  [writeback]
+   16 root         0 SW   [kcompactd0]
+   32 root         0 IW<  [kblockd]
+   33 root         0 IW   [kworker/0:1-eve]
+   34 root         0 SW   [kswapd0]
+   36 root         0 SW   [khvcd]
+   37 root         0 SW   [spi0]
+   58 root      2952 S    /sbin/klogd -n
+   83 root      2952 S    -/bin/sh
+   85 root         0 IW   [kworker/u2:1]
+   93 root      2952 S    {run_benchmark.s} /bin/sh ./scripts/run_benchmark.sh
+  103 root      2952 R    ps
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+0
+Before finishing 00_AccOne0_AccTwo0_AccThr0_Aff0_2025
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+Finished 00_AccOne0_AccTwo0_AccThr0_Aff0_2025
+i is 1
+Executing: file 00_AccOne0_AccTwo0_AccThr0_Aff0_plain_2025
+  PID USER       VSZ STAT COMMAND
+    1 root      2952 S    init
+    2 root         0 SW   [kthreadd]
+    3 root         0 IW<  [rcu_gp]
+    4 root         0 IW<  [rcu_par_gp]
+    5 root         0 IW   [kworker/0:0-eve]
+    6 root         0 IW<  [kworker/0:0H]
+    7 root         0 IW   [kworker/u2:0-ev]
+    8 root         0 IW<  [mm_percpu_wq]
+    9 root         0 SW   [ksoftirqd/0]
+   10 root         0 IW   [rcu_sched]
+   11 root         0 SW   [migration/0]
+   12 root         0 SW   [cpuhp/0]
+   13 root         0 SW   [kdevtmpfs]
+   14 root         0 SW   [oom_reaper]
+   15 root         0 IW<  [writeback]
+   16 root         0 SW   [kcompactd0]
+   32 root         0 IW<  [kblockd]
+   33 root         0 IW   [kworker/0:1-mm_]
+   34 root         0 SW   [kswapd0]
+   36 root         0 SW   [khvcd]
+   37 root         0 SW   [spi0]
+   58 root      2952 S    /sbin/klogd -n
+   83 root      2952 S    -/bin/sh
+   85 root         0 IW   [kworker/u2:1]
+   93 root      2952 S    {run_benchmark.s} /bin/sh ./scripts/run_benchmark.sh
+  115 root      2952 R    ps
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+0
+Before finishing 00_AccOne0_AccTwo0_AccThr0_Aff0_plain_2025
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+Finished 00_AccOne0_AccTwo0_AccThr0_Aff0_plain_2025
+i is 2
+Executing: file 00_AccOne0_AccTwo0_AccThr0_Aff1_2025
+  PID USER       VSZ STAT COMMAND
+    1 root      2952 S    init
+    2 root         0 SW   [kthreadd]
+    3 root         0 IW<  [rcu_gp]
+    4 root         0 IW<  [rcu_par_gp]
+    5 root         0 IW   [kworker/0:0-eve]
+    6 root         0 IW<  [kworker/0:0H]
+    7 root         0 IW   [kworker/u2:0-ev]
+    8 root         0 IW<  [mm_percpu_wq]
+    9 root         0 SW   [ksoftirqd/0]
+   10 root         0 IW   [rcu_sched]
+   11 root         0 SW   [migration/0]
+   12 root         0 SW   [cpuhp/0]
+   13 root         0 SW   [kdevtmpfs]
+   14 root         0 SW   [oom_reaper]
+   15 root         0 IW<  [writeback]
+   16 root         0 SW   [kcompactd0]
+   32 root         0 IW<  [kblockd]
+   33 root         0 IW   [kworker/0:1-mm_]
+   34 root         0 SW   [kswapd0]
+   36 root         0 SW   [khvcd]
+   37 root         0 SW   [spi0]
+   58 root      2952 S    /sbin/klogd -n
+   83 root      2952 S    -/bin/sh
+   85 root         0 IW   [kworker/u2:1]
+   93 root      2952 S    {run_benchmark.s} /bin/sh ./scripts/run_benchmark.sh
+  127 root      2952 R    ps
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+0
+Before finishing 00_AccOne0_AccTwo0_AccThr0_Aff1_2025
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+Finished 00_AccOne0_AccTwo0_AccThr0_Aff1_2025
+i is 3
+Executing: file 00_AccOne0_AccTwo0_AccThr0_Aff1_plain_2025
+  PID USER       VSZ STAT COMMAND
+    1 root      2952 S    init
+    2 root         0 SW   [kthreadd]
+    3 root         0 IW<  [rcu_gp]
+    4 root         0 IW<  [rcu_par_gp]
+    5 root         0 IW   [kworker/0:0-eve]
+    6 root         0 IW<  [kworker/0:0H]
+    7 root         0 IW   [kworker/u2:0-ev]
+    8 root         0 IW<  [mm_percpu_wq]
+    9 root         0 SW   [ksoftirqd/0]
+   10 root         0 IW   [rcu_sched]
+   11 root         0 SW   [migration/0]
+   12 root         0 SW   [cpuhp/0]
+   13 root         0 SW   [kdevtmpfs]
+   14 root         0 SW   [oom_reaper]
+   15 root         0 IW<  [writeback]
+   16 root         0 SW   [kcompactd0]
+   32 root         0 IW<  [kblockd]
+   33 root         0 IW   [kworker/0:1-eve]
+   34 root         0 SW   [kswapd0]
+   36 root         0 SW   [khvcd]
+   37 root         0 SW   [spi0]
+   58 root      2952 S    /sbin/klogd -n
+   83 root      2952 S    -/bin/sh
+   85 root         0 IW   [kworker/u2:1]
+   93 root      2952 S    {run_benchmark.s} /bin/sh ./scripts/run_benchmark.sh
+  139 root      2952 R    ps
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+0
+Before finishing 00_AccOne0_AccTwo0_AccThr0_Aff1_plain_2025
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+Finished 00_AccOne0_AccTwo0_AccThr0_Aff1_plain_2025
+i is 4
+Executing: file 00_AccOne0_AccTwo0_AccThr1_Aff0_2025
+  PID USER       VSZ STAT COMMAND
+    1 root      2952 S    init
+    2 root         0 SW   [kthreadd]
+    3 root         0 IW<  [rcu_gp]
+    4 root         0 IW<  [rcu_par_gp]
+    5 root         0 IW   [kworker/0:0-eve]
+    6 root         0 IW<  [kworker/0:0H]
+    7 root         0 IW   [kworker/u2:0-ev]
+    8 root         0 IW<  [mm_percpu_wq]
+    9 root         0 SW   [ksoftirqd/0]
+   10 root         0 IW   [rcu_sched]
+   11 root         0 SW   [migration/0]
+   12 root         0 SW   [cpuhp/0]
+   13 root         0 SW   [kdevtmpfs]
+   14 root         0 SW   [oom_reaper]
+   15 root         0 IW<  [writeback]
+   16 root         0 SW   [kcompactd0]
+   32 root         0 IW<  [kblockd]
+   33 root         0 IW   [kworker/0:1-eve]
+   34 root         0 SW   [kswapd0]
+   36 root         0 SW   [khvcd]
+   37 root         0 SW   [spi0]
+   58 root      2952 S    /sbin/klogd -n
+   83 root      2952 S    -/bin/sh
+   85 root         0 IW   [kworker/u2:1]
+   93 root      2952 S    {run_benchmark.s} /bin/sh ./scripts/run_benchmark.sh
+  151 root      2952 R    ps
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+0
+Before finishing 00_AccOne0_AccTwo0_AccThr1_Aff0_2025
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+Finished 00_AccOne0_AccTwo0_AccThr1_Aff0_2025
+i is 5
+Executing: file 00_AccOne0_AccTwo0_AccThr1_Aff0_plain_2025
+  PID USER       VSZ STAT COMMAND
+    1 root      2952 S    init
+    2 root         0 SW   [kthreadd]
+    3 root         0 IW<  [rcu_gp]
+    4 root         0 IW<  [rcu_par_gp]
+    5 root         0 IW   [kworker/0:0-eve]
+    6 root         0 IW<  [kworker/0:0H]
+    7 root         0 IW   [kworker/u2:0-ev]
+    8 root         0 IW<  [mm_percpu_wq]
+    9 root         0 SW   [ksoftirqd/0]
+   10 root         0 IW   [rcu_sched]
+   11 root         0 SW   [migration/0]
+   12 root         0 SW   [cpuhp/0]
+   13 root         0 SW   [kdevtmpfs]
+   14 root         0 SW   [oom_reaper]
+   15 root         0 IW<  [writeback]
+   16 root         0 SW   [kcompactd0]
+   32 root         0 IW<  [kblockd]
+   33 root         0 IW   [kworker/0:1-mm_]
+   34 root         0 SW   [kswapd0]
+   36 root         0 SW   [khvcd]
+   37 root         0 SW   [spi0]
+   58 root      2952 S    /sbin/klogd -n
+   83 root      2952 S    -/bin/sh
+   85 root         0 IW   [kworker/u2:1]
+   93 root      2952 S    {run_benchmark.s} /bin/sh ./scripts/run_benchmark.sh
+  163 root      2952 R    ps
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+0
+Before finishing 00_AccOne0_AccTwo0_AccThr1_Aff0_plain_2025
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+Finished 00_AccOne0_AccTwo0_AccThr1_Aff0_plain_2025
+i is 6
+Executing: file 00_AccOne0_AccTwo0_AccThr1_Aff1_2025
+  PID USER       VSZ STAT COMMAND
+    1 root      2952 S    init
+    2 root         0 SW   [kthreadd]
+    3 root         0 IW<  [rcu_gp]
+    4 root         0 IW<  [rcu_par_gp]
+    5 root         0 IW   [kworker/0:0-eve]
+    6 root         0 IW<  [kworker/0:0H]
+    7 root         0 IW   [kworker/u2:0-ev]
+    8 root         0 IW<  [mm_percpu_wq]
+    9 root         0 SW   [ksoftirqd/0]
+   10 root         0 IW   [rcu_sched]
+   11 root         0 SW   [migration/0]
+   12 root         0 SW   [cpuhp/0]
+   13 root         0 SW   [kdevtmpfs]
+   14 root         0 SW   [oom_reaper]
+   15 root         0 IW<  [writeback]
+   16 root         0 SW   [kcompactd0]
+   32 root         0 IW<  [kblockd]
+   33 root         0 IW   [kworker/0:1-eve]
+   34 root         0 SW   [kswapd0]
+   36 root         0 SW   [khvcd]
+   37 root         0 SW   [spi0]
+   58 root      2952 S    /sbin/klogd -n
+   83 root      2952 S    -/bin/sh
+   85 root         0 IW   [kworker/u2:1]
+   93 root      2952 S    {run_benchmark.s} /bin/sh ./scripts/run_benchmark.sh
+  175 root      2952 R    ps
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+0
+Before finishing 00_AccOne0_AccTwo0_AccThr1_Aff1_2025
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+Finished 00_AccOne0_AccTwo0_AccThr1_Aff1_2025
+i is 7
+Executing: file 00_AccOne0_AccTwo0_AccThr1_Aff1_plain_2025
+  PID USER       VSZ STAT COMMAND
+    1 root      2952 S    init
+    2 root         0 SW   [kthreadd]
+    3 root         0 IW<  [rcu_gp]
+    4 root         0 IW<  [rcu_par_gp]
+    5 root         0 IW   [kworker/0:0-eve]
+    6 root         0 IW<  [kworker/0:0H]
+    7 root         0 IW   [kworker/u2:0-ev]
+    8 root         0 IW<  [mm_percpu_wq]
+    9 root         0 SW   [ksoftirqd/0]
+   10 root         0 IW   [rcu_sched]
+   11 root         0 SW   [migration/0]
+   12 root         0 SW   [cpuhp/0]
+   13 root         0 SW   [kdevtmpfs]
+   14 root         0 SW   [oom_reaper]
+   15 root         0 IW<  [writeback]
+   16 root         0 SW   [kcompactd0]
+   32 root         0 IW<  [kblockd]
+   33 root         0 IW   [kworker/0:1-eve]
+   34 root         0 SW   [kswapd0]
+   36 root         0 SW   [khvcd]
+   37 root         0 SW   [spi0]
+   58 root      2952 S    /sbin/klogd -n
+   83 root      2952 S    -/bin/sh
+   85 root         0 IW   [kworker/u2:1]
+   93 root      2952 S    {run_benchmark.s} /bin/sh ./scripts/run_benchmark.sh
+  187 root      2952 R    ps
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+0
+Before finishing 00_AccOne0_AccTwo0_AccThr1_Aff1_plain_2025
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+Finished 00_AccOne0_AccTwo0_AccThr1_Aff1_plain_2025
+i is 8
+Executing: file 00_AccOne0_AccTwo1_AccThr0_Aff0_2025
+  PID USER       VSZ STAT COMMAND
+    1 root      2952 S    init
+    2 root         0 SW   [kthreadd]
+    3 root         0 IW<  [rcu_gp]
+    4 root         0 IW<  [rcu_par_gp]
+    5 root         0 IW   [kworker/0:0-eve]
+    6 root         0 IW<  [kworker/0:0H]
+    7 root         0 IW   [kworker/u2:0-ev]
+    8 root         0 IW<  [mm_percpu_wq]
+    9 root         0 SW   [ksoftirqd/0]
+   10 root         0 IW   [rcu_sched]
+   11 root         0 SW   [migration/0]
+   12 root         0 SW   [cpuhp/0]
+   13 root         0 SW   [kdevtmpfs]
+   14 root         0 SW   [oom_reaper]
+   15 root         0 IW<  [writeback]
+   16 root         0 SW   [kcompactd0]
+   32 root         0 IW<  [kblockd]
+   33 root         0 IW   [kworker/0:1-mm_]
+   34 root         0 SW   [kswapd0]
+   36 root         0 SW   [khvcd]
+   37 root         0 SW   [spi0]
+   58 root      2952 S    /sbin/klogd -n
+   83 root      2952 S    -/bin/sh
+   85 root         0 IW   [kworker/u2:1]
+   93 root      2952 S    {run_benchmark.s} /bin/sh ./scripts/run_benchmark.sh
+  199 root      2952 R    ps
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+0
+Before finishing 00_AccOne0_AccTwo1_AccThr0_Aff0_2025
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+Finished 00_AccOne0_AccTwo1_AccThr0_Aff0_2025
+i is 9
+Executing: file 00_AccOne0_AccTwo1_AccThr0_Aff0_plain_2025
+  PID USER       VSZ STAT COMMAND
+    1 root      2952 S    init
+    2 root         0 SW   [kthreadd]
+    3 root         0 IW<  [rcu_gp]
+    4 root         0 IW<  [rcu_par_gp]
+    5 root         0 IW   [kworker/0:0-eve]
+    6 root         0 IW<  [kworker/0:0H]
+    7 root         0 IW   [kworker/u2:0-ev]
+    8 root         0 IW<  [mm_percpu_wq]
+    9 root         0 SW   [ksoftirqd/0]
+   10 root         0 IW   [rcu_sched]
+   11 root         0 SW   [migration/0]
+   12 root         0 SW   [cpuhp/0]
+   13 root         0 SW   [kdevtmpfs]
+   14 root         0 SW   [oom_reaper]
+   15 root         0 IW<  [writeback]
+   16 root         0 SW   [kcompactd0]
+   32 root         0 IW<  [kblockd]
+   33 root         0 IW   [kworker/0:1-mm_]
+   34 root         0 SW   [kswapd0]
+   36 root         0 SW   [khvcd]
+   37 root         0 SW   [spi0]
+   58 root      2952 S    /sbin/klogd -n
+   83 root      2952 S    -/bin/sh
+   85 root         0 IW   [kworker/u2:1]
+   93 root      2952 S    {run_benchmark.s} /bin/sh ./scripts/run_benchmark.sh
+  211 root      2952 R    ps
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+0
+Before finishing 00_AccOne0_AccTwo1_AccThr0_Aff0_plain_2025
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+Finished 00_AccOne0_AccTwo1_AccThr0_Aff0_plain_2025
+i is 10
+Executing: file 00_AccOne0_AccTwo1_AccThr0_Aff1_2025
+  PID USER       VSZ STAT COMMAND
+    1 root      2952 S    init
+    2 root         0 SW   [kthreadd]
+    3 root         0 IW<  [rcu_gp]
+    4 root         0 IW<  [rcu_par_gp]
+    5 root         0 IW   [kworker/0:0-eve]
+    6 root         0 IW<  [kworker/0:0H]
+    7 root         0 IW   [kworker/u2:0-ev]
+    8 root         0 IW<  [mm_percpu_wq]
+    9 root         0 SW   [ksoftirqd/0]
+   10 root         0 IW   [rcu_sched]
+   11 root         0 SW   [migration/0]
+   12 root         0 SW   [cpuhp/0]
+   13 root         0 SW   [kdevtmpfs]
+   14 root         0 SW   [oom_reaper]
+   15 root         0 IW<  [writeback]
+   16 root         0 SW   [kcompactd0]
+   32 root         0 IW<  [kblockd]
+   33 root         0 IW   [kworker/0:1-eve]
+   34 root         0 SW   [kswapd0]
+   36 root         0 SW   [khvcd]
+   37 root         0 SW   [spi0]
+   58 root      2952 S    /sbin/klogd -n
+   83 root      2952 S    -/bin/sh
+   85 root         0 IW   [kworker/u2:1]
+   93 root      2952 S    {run_benchmark.s} /bin/sh ./scripts/run_benchmark.sh
+  223 root      2952 R    ps
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+0
+Before finishing 00_AccOne0_AccTwo1_AccThr0_Aff1_2025
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+Finished 00_AccOne0_AccTwo1_AccThr0_Aff1_2025
+i is 11
+Executing: file 00_AccOne0_AccTwo1_AccThr0_Aff1_plain_2025
+  PID USER       VSZ STAT COMMAND
+    1 root      2952 S    init
+    2 root         0 SW   [kthreadd]
+    3 root         0 IW<  [rcu_gp]
+    4 root         0 IW<  [rcu_par_gp]
+    5 root         0 IW   [kworker/0:0-eve]
+    6 root         0 IW<  [kworker/0:0H]
+    7 root         0 IW   [kworker/u2:0-ev]
+    8 root         0 IW<  [mm_percpu_wq]
+    9 root         0 SW   [ksoftirqd/0]
+   10 root         0 IW   [rcu_sched]
+   11 root         0 SW   [migration/0]
+   12 root         0 SW   [cpuhp/0]
+   13 root         0 SW   [kdevtmpfs]
+   14 root         0 SW   [oom_reaper]
+   15 root         0 IW<  [writeback]
+   16 root         0 SW   [kcompactd0]
+   32 root         0 IW<  [kblockd]
+   33 root         0 IW   [kworker/0:1-mm_]
+   34 root         0 SW   [kswapd0]
+   36 root         0 SW   [khvcd]
+   37 root         0 SW   [spi0]
+   58 root      2952 S    /sbin/klogd -n
+   83 root      2952 S    -/bin/sh
+   85 root         0 IW   [kworker/u2:1]
+   93 root      2952 S    {run_benchmark.s} /bin/sh ./scripts/run_benchmark.sh
+  235 root      2952 R    ps
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+0
+Before finishing 00_AccOne0_AccTwo1_AccThr0_Aff1_plain_2025
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+Finished 00_AccOne0_AccTwo1_AccThr0_Aff1_plain_2025
+i is 12
+Executing: file 00_AccOne0_AccTwo1_AccThr1_Aff0_2025
+  PID USER       VSZ STAT COMMAND
+    1 root      2952 S    init
+    2 root         0 SW   [kthreadd]
+    3 root         0 IW<  [rcu_gp]
+    4 root         0 IW<  [rcu_par_gp]
+    5 root         0 IW   [kworker/0:0-eve]
+    6 root         0 IW<  [kworker/0:0H]
+    7 root         0 IW   [kworker/u2:0-ev]
+    8 root         0 IW<  [mm_percpu_wq]
+    9 root         0 SW   [ksoftirqd/0]
+   10 root         0 IW   [rcu_sched]
+   11 root         0 SW   [migration/0]
+   12 root         0 SW   [cpuhp/0]
+   13 root         0 SW   [kdevtmpfs]
+   14 root         0 SW   [oom_reaper]
+   15 root         0 IW<  [writeback]
+   16 root         0 SW   [kcompactd0]
+   32 root         0 IW<  [kblockd]
+   33 root         0 IW   [kworker/0:1-mm_]
+   34 root         0 SW   [kswapd0]
+   36 root         0 SW   [khvcd]
+   37 root         0 SW   [spi0]
+   58 root      2952 S    /sbin/klogd -n
+   83 root      2952 S    -/bin/sh
+   85 root         0 IW   [kworker/u2:1]
+   93 root      2952 S    {run_benchmark.s} /bin/sh ./scripts/run_benchmark.sh
+  247 root      2952 R    ps
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+0
+Before finishing 00_AccOne0_AccTwo1_AccThr1_Aff0_2025
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+Finished 00_AccOne0_AccTwo1_AccThr1_Aff0_2025
+i is 13
+Executing: file 00_AccOne0_AccTwo1_AccThr1_Aff0_plain_2025
+  PID USER       VSZ STAT COMMAND
+    1 root      2952 S    init
+    2 root         0 SW   [kthreadd]
+    3 root         0 IW<  [rcu_gp]
+    4 root         0 IW<  [rcu_par_gp]
+    5 root         0 IW   [kworker/0:0-eve]
+    6 root         0 IW<  [kworker/0:0H]
+    7 root         0 IW   [kworker/u2:0-ev]
+    8 root         0 IW<  [mm_percpu_wq]
+    9 root         0 SW   [ksoftirqd/0]
+   10 root         0 RW   [rcu_sched]
+   11 root         0 SW   [migration/0]
+   12 root         0 SW   [cpuhp/0]
+   13 root         0 SW   [kdevtmpfs]
+   14 root         0 SW   [oom_reaper]
+   15 root         0 IW<  [writeback]
+   16 root         0 SW   [kcompactd0]
+   32 root         0 IW<  [kblockd]
+   33 root         0 IW   [kworker/0:1-eve]
+   34 root         0 SW   [kswapd0]
+   36 root         0 SW   [khvcd]
+   37 root         0 SW   [spi0]
+   58 root      2952 S    /sbin/klogd -n
+   83 root      2952 S    -/bin/sh
+   85 root         0 IW   [kworker/u2:1]
+   93 root      2952 S    {run_benchmark.s} /bin/sh ./scripts/run_benchmark.sh
+  259 root      2952 R    ps
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+0
+Before finishing 00_AccOne0_AccTwo1_AccThr1_Aff0_plain_2025
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+Finished 00_AccOne0_AccTwo1_AccThr1_Aff0_plain_2025
+i is 14
+Executing: file 00_AccOne0_AccTwo1_AccThr1_Aff1_2025
+  PID USER       VSZ STAT COMMAND
+    1 root      2952 S    init
+    2 root         0 SW   [kthreadd]
+    3 root         0 IW<  [rcu_gp]
+    4 root         0 IW<  [rcu_par_gp]
+    5 root         0 IW   [kworker/0:0-eve]
+    6 root         0 IW<  [kworker/0:0H]
+    7 root         0 IW   [kworker/u2:0-ev]
+    8 root         0 IW<  [mm_percpu_wq]
+    9 root         0 SW   [ksoftirqd/0]
+   10 root         0 IW   [rcu_sched]
+   11 root         0 SW   [migration/0]
+   12 root         0 SW   [cpuhp/0]
+   13 root         0 SW   [kdevtmpfs]
+   14 root         0 SW   [oom_reaper]
+   15 root         0 IW<  [writeback]
+   16 root         0 SW   [kcompactd0]
+   32 root         0 IW<  [kblockd]
+   33 root         0 IW   [kworker/0:1-eve]
+   34 root         0 SW   [kswapd0]
+   36 root         0 SW   [khvcd]
+   37 root         0 SW   [spi0]
+   58 root      2952 S    /sbin/klogd -n
+   83 root      2952 S    -/bin/sh
+   85 root         0 IW   [kworker/u2:1]
+   93 root      2952 S    {run_benchmark.s} /bin/sh ./scripts/run_benchmark.sh
+  271 root      2952 R    ps
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+0
+Before finishing 00_AccOne0_AccTwo1_AccThr1_Aff1_2025
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+Finished 00_AccOne0_AccTwo1_AccThr1_Aff1_2025
+i is 15
+Executing: file 00_AccOne0_AccTwo1_AccThr1_Aff1_plain_2025
+  PID USER       VSZ STAT COMMAND
+    1 root      2952 S    init
+    2 root         0 SW   [kthreadd]
+    3 root         0 IW<  [rcu_gp]
+    4 root         0 IW<  [rcu_par_gp]
+    5 root         0 IW   [kworker/0:0-eve]
+    6 root         0 IW<  [kworker/0:0H]
+    7 root         0 IW   [kworker/u2:0-ev]
+    8 root         0 IW<  [mm_percpu_wq]
+    9 root         0 SW   [ksoftirqd/0]
+   10 root         0 IW   [rcu_sched]
+   11 root         0 SW   [migration/0]
+   12 root         0 SW   [cpuhp/0]
+   13 root         0 SW   [kdevtmpfs]
+   14 root         0 SW   [oom_reaper]
+   15 root         0 IW<  [writeback]
+   16 root         0 SW   [kcompactd0]
+   32 root         0 IW<  [kblockd]
+   33 root         0 IW   [kworker/0:1-mm_]
+   34 root         0 SW   [kswapd0]
+   36 root         0 SW   [khvcd]
+   37 root         0 SW   [spi0]
+   58 root      2952 S    /sbin/klogd -n
+   83 root      2952 S    -/bin/sh
+   85 root         0 IW   [kworker/u2:1]
+   93 root      2952 S    {run_benchmark.s} /bin/sh ./scripts/run_benchmark.sh
+  283 root      2952 R    ps
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+0
+Before finishing 00_AccOne0_AccTwo1_AccThr1_Aff1_plain_2025
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+Finished 00_AccOne0_AccTwo1_AccThr1_Aff1_plain_2025
+i is 16
+Executing: file 00_AccOne1_AccTwo0_AccThr0_Aff0_2025
+  PID USER       VSZ STAT COMMAND
+    1 root      2952 S    init
+    2 root         0 SW   [kthreadd]
+    3 root         0 IW<  [rcu_gp]
+    4 root         0 IW<  [rcu_par_gp]
+    5 root         0 IW   [kworker/0:0-eve]
+    6 root         0 IW<  [kworker/0:0H]
+    7 root         0 IW   [kworker/u2:0-ev]
+    8 root         0 IW<  [mm_percpu_wq]
+    9 root         0 SW   [ksoftirqd/0]
+   10 root         0 RW   [rcu_sched]
+   11 root         0 SW   [migration/0]
+   12 root         0 SW   [cpuhp/0]
+   13 root         0 SW   [kdevtmpfs]
+   14 root         0 SW   [oom_reaper]
+   15 root         0 IW<  [writeback]
+   16 root         0 SW   [kcompactd0]
+   32 root         0 IW<  [kblockd]
+   33 root         0 IW   [kworker/0:1-mm_]
+   34 root         0 SW   [kswapd0]
+   36 root         0 SW   [khvcd]
+   37 root         0 SW   [spi0]
+   58 root      2952 S    /sbin/klogd -n
+   83 root      2952 S    -/bin/sh
+   85 root         0 IW   [kworker/u2:1]
+   93 root      2952 S    {run_benchmark.s} /bin/sh ./scripts/run_benchmark.sh
+  294 root      9196 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  295 root      2952 R    ps
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+0
+Before finishing 00_AccOne1_AccTwo0_AccThr0_Aff0_2025
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+Finished 00_AccOne1_AccTwo0_AccThr0_Aff0_2025
+i is 17
+Executing: file 00_AccOne1_AccTwo0_AccThr0_Aff0_plain_2025
+  PID USER       VSZ STAT COMMAND
+    1 root      2952 S    init
+    2 root         0 SW   [kthreadd]
+    3 root         0 IW<  [rcu_gp]
+    4 root         0 IW<  [rcu_par_gp]
+    5 root         0 IW   [kworker/0:0-eve]
+    6 root         0 IW<  [kworker/0:0H]
+    7 root         0 IW   [kworker/u2:0-ev]
+    8 root         0 IW<  [mm_percpu_wq]
+    9 root         0 SW   [ksoftirqd/0]
+   10 root         0 IW   [rcu_sched]
+   11 root         0 SW   [migration/0]
+   12 root         0 SW   [cpuhp/0]
+   13 root         0 SW   [kdevtmpfs]
+   14 root         0 SW   [oom_reaper]
+   15 root         0 IW<  [writeback]
+   16 root         0 SW   [kcompactd0]
+   32 root         0 IW<  [kblockd]
+   33 root         0 IW   [kworker/0:1-eve]
+   34 root         0 SW   [kswapd0]
+   36 root         0 SW   [khvcd]
+   37 root         0 SW   [spi0]
+   58 root      2952 S    /sbin/klogd -n
+   83 root      2952 S    -/bin/sh
+   85 root         0 IW   [kworker/u2:1]
+   93 root      2952 S    {run_benchmark.s} /bin/sh ./scripts/run_benchmark.sh
+  294 root      9208 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  306 root      9196 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  307 root      2952 R    ps
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+0
+Before finishing 00_AccOne1_AccTwo0_AccThr0_Aff0_plain_2025
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+Finished 00_AccOne1_AccTwo0_AccThr0_Aff0_plain_2025
+i is 18
+Executing: file 00_AccOne1_AccTwo0_AccThr0_Aff1_2025
+  PID USER       VSZ STAT COMMAND
+    1 root      2952 S    init
+    2 root         0 SW   [kthreadd]
+    3 root         0 IW<  [rcu_gp]
+    4 root         0 IW<  [rcu_par_gp]
+    5 root         0 IW   [kworker/0:0-eve]
+    6 root         0 IW<  [kworker/0:0H]
+    7 root         0 IW   [kworker/u2:0-ev]
+    8 root         0 IW<  [mm_percpu_wq]
+    9 root         0 SW   [ksoftirqd/0]
+   10 root         0 IW   [rcu_sched]
+   11 root         0 SW   [migration/0]
+   12 root         0 SW   [cpuhp/0]
+   13 root         0 SW   [kdevtmpfs]
+   14 root         0 SW   [oom_reaper]
+   15 root         0 IW<  [writeback]
+   16 root         0 SW   [kcompactd0]
+   32 root         0 IW<  [kblockd]
+   33 root         0 IW   [kworker/0:1-mm_]
+   34 root         0 SW   [kswapd0]
+   36 root         0 SW   [khvcd]
+   37 root         0 SW   [spi0]
+   58 root      2952 S    /sbin/klogd -n
+   83 root      2952 S    -/bin/sh
+   85 root         0 IW   [kworker/u2:1]
+   93 root      2952 S    {run_benchmark.s} /bin/sh ./scripts/run_benchmark.sh
+  294 root      9208 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  306 root      9208 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  319 root      2952 R    ps
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+0
+Before finishing 00_AccOne1_AccTwo0_AccThr0_Aff1_2025
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+Finished 00_AccOne1_AccTwo0_AccThr0_Aff1_2025
+i is 19
+Executing: file 00_AccOne1_AccTwo0_AccThr0_Aff1_plain_2025
+  PID USER       VSZ STAT COMMAND
+    1 root      2952 S    init
+    2 root         0 SW   [kthreadd]
+    3 root         0 IW<  [rcu_gp]
+    4 root         0 IW<  [rcu_par_gp]
+    5 root         0 IW   [kworker/0:0-eve]
+    6 root         0 IW<  [kworker/0:0H]
+    7 root         0 IW   [kworker/u2:0-ev]
+    8 root         0 IW<  [mm_percpu_wq]
+    9 root         0 SW   [ksoftirqd/0]
+   10 root         0 IW   [rcu_sched]
+   11 root         0 SW   [migration/0]
+   12 root         0 SW   [cpuhp/0]
+   13 root         0 SW   [kdevtmpfs]
+   14 root         0 SW   [oom_reaper]
+   15 root         0 IW<  [writeback]
+   16 root         0 SW   [kcompactd0]
+   32 root         0 IW<  [kblockd]
+   33 root         0 IW   [kworker/0:1-mm_]
+   34 root         0 SW   [kswapd0]
+   36 root         0 SW   [khvcd]
+   37 root         0 SW   [spi0]
+   58 root      2952 S    /sbin/klogd -n
+   83 root      2952 S    -/bin/sh
+   85 root         0 IW   [kworker/u2:1]
+   93 root      2952 S    {run_benchmark.s} /bin/sh ./scripts/run_benchmark.sh
+  294 root      9208 S    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  306 root      9208 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  330 root      9208 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  331 root      9208 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  332 root      9208 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  335 root      2952 R    ps
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+0
+Before finishing 00_AccOne1_AccTwo0_AccThr0_Aff1_plain_2025
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+Finished 00_AccOne1_AccTwo0_AccThr0_Aff1_plain_2025
+i is 20
+Executing: file 00_AccOne1_AccTwo0_AccThr1_Aff0_2025
+  PID USER       VSZ STAT COMMAND
+    1 root      2952 S    init
+    2 root         0 SW   [kthreadd]
+    3 root         0 IW<  [rcu_gp]
+    4 root         0 IW<  [rcu_par_gp]
+    5 root         0 IW   [kworker/0:0-eve]
+    6 root         0 IW<  [kworker/0:0H]
+    7 root         0 IW   [kworker/u2:0-ev]
+    8 root         0 IW<  [mm_percpu_wq]
+    9 root         0 SW   [ksoftirqd/0]
+   10 root         0 IW   [rcu_sched]
+   11 root         0 SW   [migration/0]
+   12 root         0 SW   [cpuhp/0]
+   13 root         0 SW   [kdevtmpfs]
+   14 root         0 SW   [oom_reaper]
+   15 root         0 IW<  [writeback]
+   16 root         0 SW   [kcompactd0]
+   32 root         0 IW<  [kblockd]
+   33 root         0 IW   [kworker/0:1-mm_]
+   34 root         0 SW   [kswapd0]
+   36 root         0 SW   [khvcd]
+   37 root         0 SW   [spi0]
+   58 root      2952 S    /sbin/klogd -n
+   83 root      2952 S    -/bin/sh
+   85 root         0 IW   [kworker/u2:1]
+   93 root      2952 S    {run_benchmark.s} /bin/sh ./scripts/run_benchmark.sh
+  294 root      9208 S    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  306 root      9208 S    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  330 root      9208 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  331 root      9208 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  332 root      9208 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  346 root      9208 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  347 root      9208 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  348 root      9208 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  350 root      9196 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  351 root      2952 R    ps
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+0
+Before finishing 00_AccOne1_AccTwo0_AccThr1_Aff0_2025
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+Finished 00_AccOne1_AccTwo0_AccThr1_Aff0_2025
+i is 21
+Executing: file 00_AccOne1_AccTwo0_AccThr1_Aff0_plain_2025
+  PID USER       VSZ STAT COMMAND
+    1 root      2952 S    init
+    2 root         0 SW   [kthreadd]
+    3 root         0 IW<  [rcu_gp]
+    4 root         0 IW<  [rcu_par_gp]
+    5 root         0 IW   [kworker/0:0-eve]
+    6 root         0 IW<  [kworker/0:0H]
+    7 root         0 IW   [kworker/u2:0-ev]
+    8 root         0 IW<  [mm_percpu_wq]
+    9 root         0 SW   [ksoftirqd/0]
+   10 root         0 IW   [rcu_sched]
+   11 root         0 SW   [migration/0]
+   12 root         0 SW   [cpuhp/0]
+   13 root         0 SW   [kdevtmpfs]
+   14 root         0 SW   [oom_reaper]
+   15 root         0 IW<  [writeback]
+   16 root         0 SW   [kcompactd0]
+   32 root         0 IW<  [kblockd]
+   33 root         0 IW   [kworker/0:1-mm_]
+   34 root         0 SW   [kswapd0]
+   36 root         0 SW   [khvcd]
+   37 root         0 SW   [spi0]
+   58 root      2952 S    /sbin/klogd -n
+   83 root      2952 S    -/bin/sh
+   85 root         0 IW   [kworker/u2:1]
+   93 root      2952 S    {run_benchmark.s} /bin/sh ./scripts/run_benchmark.sh
+  294 root      9208 S    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  306 root      9208 S    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  330 root      9208 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  331 root      9208 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  332 root      9208 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  346 root      9208 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  347 root      9208 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  348 root      9208 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  350 root      9208 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  362 root      9196 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  363 root      2952 R    ps
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+0
+Before finishing 00_AccOne1_AccTwo0_AccThr1_Aff0_plain_2025
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+Finished 00_AccOne1_AccTwo0_AccThr1_Aff0_plain_2025
+i is 22
+Executing: file 00_AccOne1_AccTwo0_AccThr1_Aff1_2025
+  PID USER       VSZ STAT COMMAND
+    1 root      2952 S    init
+    2 root         0 SW   [kthreadd]
+    3 root         0 IW<  [rcu_gp]
+    4 root         0 IW<  [rcu_par_gp]
+    5 root         0 IW   [kworker/0:0-eve]
+    6 root         0 IW<  [kworker/0:0H]
+    7 root         0 IW   [kworker/u2:0-ev]
+    8 root         0 IW<  [mm_percpu_wq]
+    9 root         0 SW   [ksoftirqd/0]
+   10 root         0 IW   [rcu_sched]
+   11 root         0 SW   [migration/0]
+   12 root         0 SW   [cpuhp/0]
+   13 root         0 SW   [kdevtmpfs]
+   14 root         0 SW   [oom_reaper]
+   15 root         0 IW<  [writeback]
+   16 root         0 SW   [kcompactd0]
+   32 root         0 IW<  [kblockd]
+   33 root         0 IW   [kworker/0:1-eve]
+   34 root         0 SW   [kswapd0]
+   36 root         0 SW   [khvcd]
+   37 root         0 SW   [spi0]
+   58 root      2952 S    /sbin/klogd -n
+   83 root      2952 S    -/bin/sh
+   85 root         0 IW   [kworker/u2:1]
+   93 root      2952 S    {run_benchmark.s} /bin/sh ./scripts/run_benchmark.sh
+  294 root      9208 S    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  306 root      9208 S    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  330 root      9208 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  331 root      9208 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  332 root      9208 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  346 root      9208 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  347 root      9208 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  348 root      9208 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  350 root      9208 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  362 root      9208 R    ./benchmark_output/CHESHIRE/00_AccOne1_AccTwo0_AccTh
+  375 root      2952 R    ps
+ps: invalid option -- 'e'
+BusyBox v1.33.1 (2026-07-10 13:14:40 CEST) multi-call binary.
+
+Usage: ps
+
+Show list of processes
+
+	w	Wide output
+	l	Long output
+	T	Show threads
+0
+Before finishing 00_AccOne1_AccTwo0_AccThr1_Aff1_2025
+ps: invalid option -- 'e'
+[  408.547055] ttyS ttyS0: 46 input overrun(s)
+^C
+# 
