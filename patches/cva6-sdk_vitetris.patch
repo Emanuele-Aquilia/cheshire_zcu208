@@ -1,0 +1,23 @@
+diff --git a/config.mk b/config.mk
+index 4c80870..a4619bd 100644
+--- a/config.mk
++++ b/config.mk
+@@ -12,7 +12,7 @@ datadir = $(datarootdir)/allegro
+ #datadir = $(datarootdir)/allegro/vitetris
+ 
+ UNIX = y
+-CC = riscv64-unknown-linux-gnu-gcc
++CC = /home/emanuele/Desktop/cheshire_zcu208/sw/deps/cva6-sdk/buildroot/output/host/bin/riscv64-buildroot-linux-gnu-gcc
+ 
+ TWOPLAYER = y
+ #JOYSTICK = y
+diff --git a/src/src-conf.mk b/src/src-conf.mk
+index 9dbc738..7709f9b 100644
+--- a/src/src-conf.mk
++++ b/src/src-conf.mk
+@@ -1,4 +1,4 @@
+-CC = riscv64-unknown-linux-gnu-gcc
++CC = /home/emanuele/Desktop/cheshire_zcu208/sw/deps/cva6-sdk/buildroot/output/host/bin/riscv64-buildroot-linux-gnu-gcc
+ CCFLAGS = $(CFLAGS) $(CPPFLAGS)
+ #CFLAGS = -O2 -Wall -pedantic -Wno-parentheses
+ CFLAGS = -O2

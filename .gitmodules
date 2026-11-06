@@ -6,3 +6,9 @@
 	path = sw/deps/cva6-sdk
 	url = https://github.com/pulp-platform/cva6-sdk.git
 	ignore = dirty
+[submodule "sw/tests/A_security_RISC"]
+	path = sw/tests/A_security_RISC
+	url = https://github.com/cispa/Security-RISC.git
+[submodule "sw/tests/SACTV"]
+	path = sw/tests/SACTV
+	url = https://github.com/ReSP-Lab/risc-v-sidechannel-benchmark.git

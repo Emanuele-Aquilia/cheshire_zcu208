@@ -1,0 +1,822 @@
+diff --git a/evict_reload_histogram/hist.c b/evict_reload_histogram/hist.c
+index 5532a62..866219a 100644
+--- a/evict_reload_histogram/hist.c
++++ b/evict_reload_histogram/hist.c
+@@ -1,18 +1,29 @@
+ #include "../rlibsc.h"
+ #include <stdint.h>
+ #include <stdio.h>
++#include <stdlib.h>
+ #include <string.h>
+ #include <unistd.h>
+ 
+ #define HISTOGRAM_ENTRIES 150
+ #define HISTOGRAM_SCALE 1
+-#define MEASUREMENTS 1000
++#define DEFAULT_MEASUREMENTS 1000
+ 
+ #define LOGFILE "histogram.csv"
+ 
+ char __attribute__((aligned(4096))) buffer[4 * 1024 * 1024];
+ 
+-#ifdef C906
++#if defined(CVA6)
++static inline void evict(void *addr) {
++  size_t pset = (((size_t)addr) >> 4) & 255;
++  int pn = (((size_t)addr) >> 4) & 256;
++  int bufpn = (((size_t)buffer) >> 4) & 256;
++  int i = 1;
++  int j = (pn & 256 == bufpn) ? 0 : 1;
++  REP64(maccess(buffer + i++ * 2 * 4096 + j * 4096 + (pset << 4));)
++}
++
++#elif defined(C906)
+ static inline void evict(void *addr) {
+   size_t pset = (((size_t)addr) >> 6) & 63;
+   int pn = (((size_t)addr) >> 6) & 64;
+@@ -52,8 +63,7 @@ void measure_hits(void *address, size_t *histogram,
+                   size_t number_of_measurements) {
+   for (size_t i = 0; i < number_of_measurements; i++) {
+     size_t hit = measure_access_time(address);
+-    if (hit < HISTOGRAM_ENTRIES)
+-      histogram[hit]++;
++    histogram[hit < HISTOGRAM_ENTRIES ? hit : HISTOGRAM_ENTRIES]++;
+   }
+ }
+ 
+@@ -62,15 +72,18 @@ void measure_misses(void *address, size_t *histogram,
+   for (size_t i = 0; i < number_of_measurements; i++) {
+     evict(address);
+     size_t miss = measure_access_time(address);
+-    if (miss < HISTOGRAM_ENTRIES)
+-      histogram[miss]++;
++    histogram[miss < HISTOGRAM_ENTRIES ? miss : HISTOGRAM_ENTRIES]++;
+   }
+ }
+ 
+-size_t hit_histogram[HISTOGRAM_ENTRIES], miss_histogram[HISTOGRAM_ENTRIES];
++size_t hit_histogram[HISTOGRAM_ENTRIES + 1], miss_histogram[HISTOGRAM_ENTRIES + 1];
+ char __attribute__((aligned(4096))) address[4096];
+ 
+ int main(int argc, char *argv[]) {
++  size_t measurements =
++      argc > 1 ? strtoul(argv[1], NULL, 0) : DEFAULT_MEASUREMENTS;
++  fprintf(stdout, "measurements: %zu\n", measurements);
++
+   FILE *logfile = fopen(LOGFILE, "w+");
+   if (logfile == NULL) {
+     fprintf(stderr, "Error: Could not open logfile: %s\n", LOGFILE);
+@@ -82,8 +95,8 @@ int main(int argc, char *argv[]) {
+   memset(address, 1, 4096);
+   memset(buffer, 2, sizeof(buffer));
+ 
+-  measure_hits(address, hit_histogram, MEASUREMENTS);
+-  measure_misses(address, miss_histogram, MEASUREMENTS);
++  measure_hits(address, hit_histogram, measurements);
++  measure_misses(address, miss_histogram, measurements);
+ 
+   for (size_t i = 0; i < HISTOGRAM_ENTRIES; i += HISTOGRAM_SCALE) {
+     size_t hit = 0, miss = 0;
+@@ -97,6 +110,9 @@ int main(int argc, char *argv[]) {
+     }
+   }
+ 
++  fprintf(stdout, "  >=%d: %10zu %10zu\n", HISTOGRAM_ENTRIES,
++          hit_histogram[HISTOGRAM_ENTRIES], miss_histogram[HISTOGRAM_ENTRIES]);
++
+   fclose(logfile);
+ 
+   return 0;
+diff --git a/fence-flush/hist.c b/fence-flush/hist.c
+index 2a63cac..74cd792 100644
+--- a/fence-flush/hist.c
++++ b/fence-flush/hist.c
+@@ -1,12 +1,13 @@
+ #include "../rlibsc.h"
+ #include <stdint.h>
+ #include <stdio.h>
++#include <stdlib.h>
+ #include <string.h>
+ #include <unistd.h>
+ 
+ #define HISTOGRAM_ENTRIES 200
+ #define HISTOGRAM_SCALE 1
+-#define MEASUREMENTS 1000
++#define DEFAULT_MEASUREMENTS 1000
+ 
+ #define LOGFILE "histogram.csv"
+ 
+@@ -28,8 +29,7 @@ void measure_hits(void *address, size_t *histogram,
+                   size_t number_of_measurements) {
+   for (size_t i = 0; i < number_of_measurements; i++) {
+     size_t hit = measure_access_time(address);
+-    if (hit < HISTOGRAM_ENTRIES)
+-      histogram[hit]++;
++    histogram[hit < HISTOGRAM_ENTRIES ? hit : HISTOGRAM_ENTRIES]++;
+   }
+ }
+ 
+@@ -38,14 +38,17 @@ void measure_misses(void *address, size_t *histogram,
+   for (size_t i = 0; i < number_of_measurements; i++) {
+     fencei(address);
+     size_t miss = measure_access_time(address);
+-    if (miss < HISTOGRAM_ENTRIES)
+-      histogram[miss]++;
++    histogram[miss < HISTOGRAM_ENTRIES ? miss : HISTOGRAM_ENTRIES]++;
+   }
+ }
+ 
+-size_t hit_histogram[HISTOGRAM_ENTRIES], miss_histogram[HISTOGRAM_ENTRIES];
++size_t hit_histogram[HISTOGRAM_ENTRIES + 1], miss_histogram[HISTOGRAM_ENTRIES + 1];
+ 
+ int main(int argc, char *argv[]) {
++  size_t measurements =
++      argc > 1 ? strtoul(argv[1], NULL, 0) : DEFAULT_MEASUREMENTS;
++  fprintf(stdout, "measurements: %zu\n", measurements);
++
+   FILE *logfile = fopen(LOGFILE, "w+");
+   if (logfile == NULL) {
+     fprintf(stderr, "Error: Could not open logfile: %s\n", LOGFILE);
+@@ -56,8 +59,8 @@ int main(int argc, char *argv[]) {
+ 
+   victim();
+ 
+-  measure_hits(victim, hit_histogram, MEASUREMENTS);
+-  measure_misses(victim, miss_histogram, MEASUREMENTS);
++  measure_hits(victim, hit_histogram, measurements);
++  measure_misses(victim, miss_histogram, measurements);
+ 
+   for (size_t i = 0; i < HISTOGRAM_ENTRIES; i += HISTOGRAM_SCALE) {
+     size_t hit = 0, miss = 0;
+@@ -71,6 +74,9 @@ int main(int argc, char *argv[]) {
+     }
+   }
+ 
++  fprintf(stdout, "  >=%d: %10zu %10zu\n", HISTOGRAM_ENTRIES,
++          hit_histogram[HISTOGRAM_ENTRIES], miss_histogram[HISTOGRAM_ENTRIES]);
++
+   fclose(logfile);
+   return 0;
+ }
+diff --git a/flush_flush_histogram/hist.c b/flush_flush_histogram/hist.c
+index c8d56af..0a45052 100644
+--- a/flush_flush_histogram/hist.c
++++ b/flush_flush_histogram/hist.c
+@@ -1,12 +1,13 @@
+ #include "../rlibsc.h"
+ #include <stdint.h>
+ #include <stdio.h>
++#include <stdlib.h>
+ #include <string.h>
+ #include <unistd.h>
+ 
+-#define HISTOGRAM_ENTRIES 350
++#define HISTOGRAM_ENTRIES 3000
+ #define HISTOGRAM_SCALE 1
+-#define MEASUREMENTS 1000
++#define DEFAULT_MEASUREMENTS 1000
+ 
+ #define LOGFILE "histogram.csv"
+ 
+@@ -22,8 +23,7 @@ void measure_hits(void *address, size_t *histogram,
+   for (size_t i = 0; i < number_of_measurements; i++) {
+     *(volatile char *)address = i;
+     size_t hit = measure_access_time(address);
+-    if (hit < HISTOGRAM_ENTRIES)
+-      histogram[hit]++;
++    histogram[hit < HISTOGRAM_ENTRIES ? hit : HISTOGRAM_ENTRIES]++;
+   }
+ }
+ 
+@@ -32,27 +32,30 @@ void measure_misses(void *address, size_t *histogram,
+   for (size_t i = 0; i < number_of_measurements; i++) {
+     maccess(address);
+     size_t miss = measure_access_time(address);
+-    if (miss < HISTOGRAM_ENTRIES)
+-      histogram[miss]++;
++    histogram[miss < HISTOGRAM_ENTRIES ? miss : HISTOGRAM_ENTRIES]++;
+   }
+ }
+ 
+-size_t hit_histogram[HISTOGRAM_ENTRIES], miss_histogram[HISTOGRAM_ENTRIES];
++size_t hit_histogram[HISTOGRAM_ENTRIES + 1], miss_histogram[HISTOGRAM_ENTRIES + 1];
+ char __attribute__((aligned(4096))) address[4096];
+ 
+ int main(int argc, char *argv[]) {
++  size_t measurements =
++      argc > 1 ? strtoul(argv[1], NULL, 0) : DEFAULT_MEASUREMENTS;
++  fprintf(stdout, "measurements: %zu\n", measurements);
++
+   FILE *logfile = fopen(LOGFILE, "w+");
+   if (logfile == NULL) {
+     fprintf(stderr, "Error: Could not open logfile: %s\n", LOGFILE);
+     return -1;
+   }
+ 
+-  fprintf(logfile, "Time,Miss,Hit\n");
++  fprintf(logfile, "Time,Hit,Miss\n");
+ 
+   memset(address, 1, 4096);
+ 
+-  measure_hits(address, hit_histogram, MEASUREMENTS);
+-  measure_misses(address, miss_histogram, MEASUREMENTS);
++  measure_hits(address, hit_histogram, measurements);
++  measure_misses(address, miss_histogram, measurements);
+ 
+   for (size_t i = 0; i < HISTOGRAM_ENTRIES; i += HISTOGRAM_SCALE) {
+     size_t hit = 0, miss = 0;
+@@ -66,6 +69,9 @@ int main(int argc, char *argv[]) {
+     }
+   }
+ 
++  fprintf(stdout, "  >=%d: %10zu %10zu\n", HISTOGRAM_ENTRIES,
++          hit_histogram[HISTOGRAM_ENTRIES], miss_histogram[HISTOGRAM_ENTRIES]);
++
+   fclose(logfile);
+ 
+   return 0;
+diff --git a/flush_reload_histogram/hist.c b/flush_reload_histogram/hist.c
+index cd17f32..8c53962 100644
+--- a/flush_reload_histogram/hist.c
++++ b/flush_reload_histogram/hist.c
+@@ -1,12 +1,13 @@
+ #include "../rlibsc.h"
+ #include <stdint.h>
+ #include <stdio.h>
++#include <stdlib.h>
+ #include <string.h>
+ #include <unistd.h>
+ 
+ #define HISTOGRAM_ENTRIES 200
+ #define HISTOGRAM_SCALE 1
+-#define MEASUREMENTS 1000
++#define DEFAULT_MEASUREMENTS 1000
+ 
+ #define LOGFILE "histogram.csv"
+ 
+@@ -21,8 +22,7 @@ void measure_hits(void *address, size_t *histogram,
+                   size_t number_of_measurements) {
+   for (size_t i = 0; i < number_of_measurements; i++) {
+     size_t hit = measure_access_time(address);
+-    if (hit < HISTOGRAM_ENTRIES)
+-      histogram[hit]++;
++    histogram[hit < HISTOGRAM_ENTRIES ? hit : HISTOGRAM_ENTRIES]++;
+   }
+ }
+ 
+@@ -31,15 +31,18 @@ void measure_misses(void *address, size_t *histogram,
+   for (size_t i = 0; i < number_of_measurements; i++) {
+     flush(address);
+     size_t miss = measure_access_time(address);
+-    if (miss < HISTOGRAM_ENTRIES)
+-      histogram[miss]++;
++    histogram[miss < HISTOGRAM_ENTRIES ? miss : HISTOGRAM_ENTRIES]++;
+   }
+ }
+ 
+-size_t hit_histogram[HISTOGRAM_ENTRIES], miss_histogram[HISTOGRAM_ENTRIES];
++size_t hit_histogram[HISTOGRAM_ENTRIES + 1], miss_histogram[HISTOGRAM_ENTRIES + 1];
+ char __attribute__((aligned(4096))) address[4096];
+ 
+ int main(int argc, char *argv[]) {
++  size_t measurements =
++      argc > 1 ? strtoul(argv[1], NULL, 0) : DEFAULT_MEASUREMENTS;
++  fprintf(stdout, "measurements: %zu\n", measurements);
++
+   FILE *logfile = fopen(LOGFILE, "w+");
+   if (logfile == NULL) {
+     fprintf(stderr, "Error: Could not open logfile: %s\n", LOGFILE);
+@@ -50,8 +53,8 @@ int main(int argc, char *argv[]) {
+ 
+   memset(address, 1, 4096);
+ 
+-  measure_hits(address, hit_histogram, MEASUREMENTS);
+-  measure_misses(address, miss_histogram, MEASUREMENTS);
++  measure_hits(address, hit_histogram, measurements);
++  measure_misses(address, miss_histogram, measurements);
+ 
+   for (size_t i = 0; i < HISTOGRAM_ENTRIES; i += HISTOGRAM_SCALE) {
+     size_t hit = 0, miss = 0;
+@@ -65,6 +68,9 @@ int main(int argc, char *argv[]) {
+     }
+   }
+ 
++  fprintf(stdout, "  >=%d: %10zu %10zu\n", HISTOGRAM_ENTRIES,
++          hit_histogram[HISTOGRAM_ENTRIES], miss_histogram[HISTOGRAM_ENTRIES]);
++
+   fclose(logfile);
+ 
+   return 0;
+diff --git a/iflush_reload_histogram/hist.c b/iflush_reload_histogram/hist.c
+index a0287b4..5badcf2 100644
+--- a/iflush_reload_histogram/hist.c
++++ b/iflush_reload_histogram/hist.c
+@@ -1,12 +1,13 @@
+ #include "../rlibsc.h"
+ #include <stdint.h>
+ #include <stdio.h>
++#include <stdlib.h>
+ #include <string.h>
+ #include <unistd.h>
+ 
+ #define HISTOGRAM_ENTRIES 200
+ #define HISTOGRAM_SCALE 1
+-#define MEASUREMENTS 1000
++#define DEFAULT_MEASUREMENTS 1000
+ 
+ #define LOGFILE "histogram.csv"
+ 
+@@ -28,8 +29,7 @@ void measure_hits(void *address, size_t *histogram,
+                   size_t number_of_measurements) {
+   for (size_t i = 0; i < number_of_measurements; i++) {
+     size_t hit = measure_access_time(address);
+-    if (hit < HISTOGRAM_ENTRIES)
+-      histogram[hit]++;
++    histogram[hit < HISTOGRAM_ENTRIES ? hit : HISTOGRAM_ENTRIES]++;
+   }
+ }
+ 
+@@ -38,14 +38,17 @@ void measure_misses(void *address, size_t *histogram,
+   for (size_t i = 0; i < number_of_measurements; i++) {
+     iflush(address);
+     size_t miss = measure_access_time(address);
+-    if (miss < HISTOGRAM_ENTRIES)
+-      histogram[miss]++;
++    histogram[miss < HISTOGRAM_ENTRIES ? miss : HISTOGRAM_ENTRIES]++;
+   }
+ }
+ 
+-size_t hit_histogram[HISTOGRAM_ENTRIES], miss_histogram[HISTOGRAM_ENTRIES];
++size_t hit_histogram[HISTOGRAM_ENTRIES + 1], miss_histogram[HISTOGRAM_ENTRIES + 1];
+ 
+ int main(int argc, char *argv[]) {
++  size_t measurements =
++      argc > 1 ? strtoul(argv[1], NULL, 0) : DEFAULT_MEASUREMENTS;
++  fprintf(stdout, "measurements: %zu\n", measurements);
++
+   FILE *logfile = fopen(LOGFILE, "w+");
+   if (logfile == NULL) {
+     fprintf(stderr, "Error: Could not open logfile: %s\n", LOGFILE);
+@@ -56,8 +59,8 @@ int main(int argc, char *argv[]) {
+ 
+   victim();
+ 
+-  measure_hits(victim, hit_histogram, MEASUREMENTS);
+-  measure_misses(victim, miss_histogram, MEASUREMENTS);
++  measure_hits(victim, hit_histogram, measurements);
++  measure_misses(victim, miss_histogram, measurements);
+ 
+   for (size_t i = 0; i < HISTOGRAM_ENTRIES; i += HISTOGRAM_SCALE) {
+     size_t hit = 0, miss = 0;
+@@ -71,6 +74,9 @@ int main(int argc, char *argv[]) {
+     }
+   }
+ 
++  fprintf(stdout, "  >=%d: %10zu %10zu\n", HISTOGRAM_ENTRIES,
++          hit_histogram[HISTOGRAM_ENTRIES], miss_histogram[HISTOGRAM_ENTRIES]);
++
+   fclose(logfile);
+ 
+   return 0;
+diff --git a/mbedtls-key-leak/attack_offsets.h b/mbedtls-key-leak/attack_offsets.h
+new file mode 100644
+index 0000000..2009226
+--- /dev/null
++++ b/mbedtls-key-leak/attack_offsets.h
+@@ -0,0 +1,8 @@
++// generated automatically by cross-compiler build pipeline
++#ifndef ATTACK_OFFSETS_H
++#define ATTACK_OFFSETS_H
++
++#define MPI_EXP_MOD_OFFSET 0x1d000
++#define ONE_OFFSET 0x1d7b6
++
++#endif /* !ATTACK_OFFSETS_H */
+diff --git a/mbedtls-key-leak/get_offsets.py b/mbedtls-key-leak/get_offsets.py
+index 3dc2e26..02f7e69 100755
+--- a/mbedtls-key-leak/get_offsets.py
++++ b/mbedtls-key-leak/get_offsets.py
+@@ -1,40 +1,68 @@
+-#! /usr/bin/env python3
++#!/usr/bin/env python3
++import os
++import subprocess
++import sys
+ 
+-
+-from pwn import *
+-
+-#LIB = "./mbedtls/library/libmbedtls.so"
+ LIB = "./libmbedtls.so.8"
+ 
+ def get_offsets(libpath):
+-    context.log_level = 'error'
+-    context.arch = 'riscv'
+-    e = ELF(LIB)
+-    ctr_drbg_init_offset = e.functions['ctr_drbg_init'].address
+-    print(f"[+] CTR_DRBG_INIT_OFFSET @ 0x{ctr_drbg_init_offset:x}")
++    # Find workspace root relative to this file
++    cur_dir = os.path.dirname(os.path.abspath(__file__))
++    workspace_root = os.path.abspath(os.path.join(cur_dir, "../../../.."))
++    readelf_bin = os.path.join(workspace_root, "sw/deps/cva6-sdk/buildroot/output/host/bin/riscv64-buildroot-linux-gnu-readelf")
++    if not os.path.exists(readelf_bin):
++        readelf_bin = "readelf"
++
++    try:
++        out = subprocess.check_output([readelf_bin, "-s", libpath]).decode("utf-8", errors="ignore")
++    except Exception as e:
++        print(f"[-] Error running readelf: {e}")
++        sys.exit(1)
++
++    mpi_exp_mod_offset = None
++    ctr_drbg_init_offset = None
+ 
+-    mpi_exp_mod_offset = e.functions['mpi_exp_mod'].address
++    for line in out.splitlines():
++        if "mpi_exp_mod" in line and "GLOBAL" in line:
++            parts = line.split()
++            if len(parts) >= 8:
++                mpi_exp_mod_offset = int(parts[1], 16)
++        if "ctr_drbg_init" in line and "GLOBAL" in line:
++            parts = line.split()
++            if len(parts) >= 8 and parts[7] == "ctr_drbg_init":
++                ctr_drbg_init_offset = int(parts[1], 16)
++
++    if mpi_exp_mod_offset is None or ctr_drbg_init_offset is None:
++        print("[-] Could not find function symbols in elf")
++        sys.exit(1)
++
++    print(f"[+] CTR_DRBG_INIT_OFFSET @ 0x{ctr_drbg_init_offset:x}")
+     print(f"[+] MPI_EXP_MOD_OFFSET @ 0x{mpi_exp_mod_offset:x}")
+ 
+     # c.nop, c.nop, c.nop, c.nop, unimpl, c.nop
+     pattern_bytes = b"\x01\x00\x01\x00\x01\x00\x01\x00\x00\x00\x01\x00"
+ 
+-    patterns_found = e.search(pattern_bytes, executable=True)
+-    one_offset = next(patterns_found, None)
+-    if one_offset is None:
++    with open(libpath, "rb") as f:
++        data = f.read()
++
++    # Search for the byte pattern
++    idx = data.find(pattern_bytes)
++    if idx == -1:
+         print("\033[91m[-] Could not find ONE_OFFSET address\033[0m")
+-        exit(1)
+-    one_offset += 8  # increase to the the actual point of failure
+-    # assert that we only found one possible address
+-    assert next(patterns_found, None)  == None
++        sys.exit(1)
++
++    one_offset = idx + 8
++    
++    # Assert that it is unique
++    if data.find(pattern_bytes, idx + 1) != -1:
++        print("[-] Multiple occurrences of ONE_OFFSET pattern found!")
++        sys.exit(1)
++
+     print(f"[+] ONE_OFFSET @ 0x{one_offset:x}")
+     return ctr_drbg_init_offset, mpi_exp_mod_offset, one_offset
+-    
++
+ def main():
+     get_offsets(LIB)
+-    
+-
+-
+ 
+ if __name__ == "__main__":
+     main()
+diff --git a/prime_probe_histogram/hist.c b/prime_probe_histogram/hist.c
+index 0d4f46f..3f3ba41 100644
+--- a/prime_probe_histogram/hist.c
++++ b/prime_probe_histogram/hist.c
+@@ -1,12 +1,13 @@
+ #include <stdint.h>
+ #include <stdio.h>
++#include <stdlib.h>
+ #include <string.h>
+ #include <unistd.h>
+ #include "../rlibsc.h" 
+ 
+ #define HISTOGRAM_ENTRIES 1500
+ #define HISTOGRAM_SCALE 10
+-#define MEASUREMENTS 1000
++#define DEFAULT_MEASUREMENTS 1000
+ 
+ #define LOGFILE "histogram.csv"
+ 
+@@ -54,8 +55,7 @@ void measure_hits(void *address, size_t *histogram,
+                   size_t number_of_measurements) {
+   for (size_t i = 0; i < number_of_measurements; i++) {
+     size_t hit = measure_access_time(address);
+-    if (hit < HISTOGRAM_ENTRIES)
+-      histogram[hit]++;
++    histogram[hit < HISTOGRAM_ENTRIES ? hit : HISTOGRAM_ENTRIES]++;
+   }
+ }
+ 
+@@ -64,15 +64,18 @@ void measure_misses(void *address, size_t *histogram,
+   for (size_t i = 0; i < number_of_measurements; i++) {
+     maccess(address);
+     size_t miss = measure_access_time(address);
+-    if (miss < HISTOGRAM_ENTRIES)
+-      histogram[miss]++;
++    histogram[miss < HISTOGRAM_ENTRIES ? miss : HISTOGRAM_ENTRIES]++;
+   }
+ }
+ 
+-size_t hit_histogram[HISTOGRAM_ENTRIES], miss_histogram[HISTOGRAM_ENTRIES];
++size_t hit_histogram[HISTOGRAM_ENTRIES + 1], miss_histogram[HISTOGRAM_ENTRIES + 1];
+ char __attribute__((aligned(4096))) address[4096];
+ 
+ int main(int argc, char *argv[]) {
++  size_t measurements =
++      argc > 1 ? strtoul(argv[1], NULL, 0) : DEFAULT_MEASUREMENTS;
++  fprintf(stdout, "measurements: %zu\n", measurements);
++
+   FILE *logfile = fopen(LOGFILE, "w+");
+   if (logfile == NULL) {
+     fprintf(stderr, "Error: Could not open logfile: %s\n", LOGFILE);
+@@ -84,8 +87,8 @@ int main(int argc, char *argv[]) {
+   memset(address, 1, 4096);
+   memset(buffer, 2, sizeof(buffer));
+ 
+-  measure_hits(address, hit_histogram, MEASUREMENTS);
+-  measure_misses(address, miss_histogram, MEASUREMENTS);
++  measure_hits(address, hit_histogram, measurements);
++  measure_misses(address, miss_histogram, measurements);
+ 
+   for (size_t i = 0; i < HISTOGRAM_ENTRIES; i += HISTOGRAM_SCALE) {
+     size_t hit = 0, miss = 0;
+@@ -99,6 +102,9 @@ int main(int argc, char *argv[]) {
+     }
+   }
+ 
++  fprintf(stdout, "  >=%d: %10zu %10zu\n", HISTOGRAM_ENTRIES,
++          hit_histogram[HISTOGRAM_ENTRIES], miss_histogram[HISTOGRAM_ENTRIES]);
++
+   fclose(logfile);
+ 
+   return 0;
+diff --git a/rlibsc.h b/rlibsc.h
+index 32f2585..a9e1cc9 100644
+--- a/rlibsc.h
++++ b/rlibsc.h
+@@ -14,6 +14,7 @@
+ #define REP10(x) REP5(x) REP5(x)
+ #define REP16(x) REP8(x) REP8(x)
+ #define REP20(x) REP10(x) REP10(x)
++#define REP32(x) REP16(x) REP16(x)
+ #define REP100(x)                                                              \
+   REP10(x)                                                                     \
+   REP10(x)                                                                     \
+@@ -124,4 +125,12 @@ static inline void iflush(void* addr) {
+ // -----------------------------
+ #elif defined(U74)
+ 
++static inline void flush(void *addr) {
++  asm volatile("fence" ::: "memory");
++}
++
++static inline void iflush(void *addr) {
++  asm volatile("fence.i" ::: "memory");
++}
++
+ #endif
+\ No newline at end of file
+diff --git a/spectre-v1/hist.c b/spectre-v1/hist.c
+index 1213c5e..43042de 100644
+--- a/spectre-v1/hist.c
++++ b/spectre-v1/hist.c
+@@ -1,12 +1,13 @@
+ #include "../rlibsc.h"
+ #include <stdint.h>
+ #include <stdio.h>
++#include <stdlib.h>
+ #include <string.h>
+ #include <unistd.h>
+ 
+ #define HISTOGRAM_ENTRIES 200
+ #define HISTOGRAM_SCALE 3
+-#define MEASUREMENTS 1000
++#define DEFAULT_MEASUREMENTS 1000
+ 
+ #define LOGFILE "histogram.csv"
+ 
+@@ -35,8 +36,7 @@ void measure_hits(void *address, size_t *histogram,
+       a++;
+     }
+     size_t hit = is_spec * measure_access_time(address);
+-    if (hit < HISTOGRAM_ENTRIES)
+-      histogram[hit]++;
++    histogram[hit < HISTOGRAM_ENTRIES ? hit : HISTOGRAM_ENTRIES]++;
+   }
+   printf("Arch. access: %d\n", a);
+ }
+@@ -46,15 +46,18 @@ void measure_misses(void *address, size_t *histogram,
+   for (size_t i = 0; i < number_of_measurements; i++) {
+     fencei();
+     size_t miss = measure_access_time(address);
+-    if (miss < HISTOGRAM_ENTRIES)
+-      histogram[miss]++;
++    histogram[miss < HISTOGRAM_ENTRIES ? miss : HISTOGRAM_ENTRIES]++;
+   }
+ }
+ 
+-size_t hit_histogram[HISTOGRAM_ENTRIES], miss_histogram[HISTOGRAM_ENTRIES];
++size_t hit_histogram[HISTOGRAM_ENTRIES + 1], miss_histogram[HISTOGRAM_ENTRIES + 1];
+ char __attribute__((aligned(4096))) address[4096];
+ 
+ int main(int argc, char *argv[]) {
++  size_t measurements =
++      argc > 1 ? strtoul(argv[1], NULL, 0) : DEFAULT_MEASUREMENTS;
++  fprintf(stdout, "measurements: %zu\n", measurements);
++
+   FILE *logfile = fopen(LOGFILE, "w+");
+   if (logfile == NULL) {
+     fprintf(stderr, "Error: Could not open logfile: %s\n", LOGFILE);
+@@ -65,8 +68,8 @@ int main(int argc, char *argv[]) {
+ 
+   memset(address, 1, 4096);
+ 
+-  measure_hits(victim, hit_histogram, MEASUREMENTS);
+-  measure_misses(victim, miss_histogram, MEASUREMENTS);
++  measure_hits(victim, hit_histogram, measurements);
++  measure_misses(victim, miss_histogram, measurements);
+ 
+   for (size_t i = 0; i < HISTOGRAM_ENTRIES; i += HISTOGRAM_SCALE) {
+     size_t hit = 0, miss = 0;
+@@ -80,6 +83,9 @@ int main(int argc, char *argv[]) {
+     }
+   }
+ 
++  fprintf(stdout, "  >=%d: %10zu %10zu\n", HISTOGRAM_ENTRIES,
++          hit_histogram[HISTOGRAM_ENTRIES], miss_histogram[HISTOGRAM_ENTRIES]);
++
+   fclose(logfile);
+ 
+   return 0;
+diff --git a/timer-evaluation/Makefile b/timer-evaluation/Makefile
+index 5b9e468..239a145 100644
+--- a/timer-evaluation/Makefile
++++ b/timer-evaluation/Makefile
+@@ -1,10 +1,10 @@
+ all: main timer-resolution
+ 
+ main: main.c
+-	gcc main.c -Os -o main
++	/home/emanuele/Desktop/cheshire_zcu208/sw/deps/cva6-sdk/buildroot/output/host/bin/riscv64-buildroot-linux-gnu-gcc main.c -Os -o main
+ 
+ timer-resolution: timer-resolution.c
+-	gcc timer-resolution.c -Os -o timer-resolution
++	/home/emanuele/Desktop/cheshire_zcu208/sw/deps/cva6-sdk/buildroot/output/host/bin/riscv64-buildroot-linux-gnu-gcc timer-resolution.c -Os -o timer-resolution
+ 
+ clean:
+ 	rm -f main timer-resolution
+diff --git a/timer-evaluation/main.c b/timer-evaluation/main.c
+index f80bcc0..567e2c1 100644
+--- a/timer-evaluation/main.c
++++ b/timer-evaluation/main.c
+@@ -5,14 +5,14 @@
+ #include <time.h>
+ #include <unistd.h>
+ 
+-#define NUM_MEASURE 10000
++#define NUM_MEASURE 200000
+ #define CTR_THREAD_SPINS 100000
+ 
+ inline uint64_t as_nanoseconds(struct timespec *ts) {
+   return ts->tv_sec * (uint64_t)1000000000L + ts->tv_nsec;
+ }
+ 
+-static inline void payload() { REP1K(asm volatile("nop");) }
++static inline void payload() { REP4K(asm volatile("nop");) }
+ 
+ void main() {
+   uint32_t acc[] = {0, 0, 0, 0, 0, 0, 0};
+@@ -70,7 +70,7 @@ void main() {
+   printf("[+] rdtime: %d ticks\n", acc[2] / NUM_MEASURE);
+   printf("[+] get_time_perf: %d ticks\n", acc[3] / NUM_MEASURE);
+   printf("[+] get_cycle_perf: %d ticks\n", acc[4] / NUM_MEASURE);
+-  printf("[+] get_retire_perf: %d retired in interval with 1000 nops\n",
++  printf("[+] get_retire_perf: %d retired in interval with 4096 nops\n",
+          acc[5] / NUM_MEASURE);
+   printf("[+] count_thread %d spins in %dns\n", CTR_THREAD_SPINS,
+          acc[6] / NUM_MEASURE);
+diff --git a/timer-evaluation/timer-resolution.c b/timer-evaluation/timer-resolution.c
+index 3678ece..8335be5 100644
+--- a/timer-evaluation/timer-resolution.c
++++ b/timer-evaluation/timer-resolution.c
+@@ -28,6 +28,7 @@ int main() {
+     for (size_t i = 0; i < TESTS; i++) {
+       clock_gettime(CLOCK_REALTIME, &stamp);
+       size_t val = as_nanoseconds(&stamp);
++      //printf("%d of 1000000 of clock_gettime val: %zu\n", i, val);
+       hist[val % div]++;
+     }
+ 
+@@ -60,6 +61,7 @@ int main() {
+ 
+     for (size_t i = 0; i < TESTS; i++) {
+       size_t val = rdcycle();
++      //printf("%d of 1000000 of rdcycle val: %zu\n", i, val);
+       hist[val % div]++;
+     }
+ 
+@@ -92,6 +94,7 @@ int main() {
+ 
+     for (size_t i = 0; i < TESTS; i++) {
+       size_t val = get_cycle_perf();
++      //printf("%d of 1000000 of get_cycle_perf val: %zu\n", i, val);
+       hist[val % div]++;
+     }
+ 
+@@ -124,6 +127,7 @@ int main() {
+ 
+     for (size_t i = 0; i < TESTS; i++) {
+       size_t val = rdtime();
++      //printf("%d of 1000000 of rdtime val: %zu\n", i, val);
+       hist[val % div]++;
+     }
+ 
+@@ -156,6 +160,7 @@ int main() {
+ 
+     for (size_t i = 0; i < TESTS; i++) {
+       size_t val = get_time_perf();
++      //printf("%d of 1000000 of get_time_perf val: %zu\n", i, val);
+       hist[val % div]++;
+     }
+ 
+diff --git a/tlb_evict_histogram/hist.c b/tlb_evict_histogram/hist.c
+index e6047a2..37401e2 100644
+--- a/tlb_evict_histogram/hist.c
++++ b/tlb_evict_histogram/hist.c
+@@ -1,12 +1,13 @@
+ #include "../rlibsc.h"
+ #include <stdint.h>
+ #include <stdio.h>
++#include <stdlib.h>
+ #include <string.h>
+ #include <unistd.h>
+ 
+ #define HISTOGRAM_ENTRIES 150
+ #define HISTOGRAM_SCALE 1
+-#define MEASUREMENTS 1000
++#define DEFAULT_MEASUREMENTS 1000
+ 
+ #define LOGFILE "histogram.csv"
+ 
+@@ -28,8 +29,7 @@ void measure_hits(void *address, size_t *histogram,
+                   size_t number_of_measurements) {
+   for (size_t i = 0; i < number_of_measurements; i++) {
+     size_t hit = measure_access_time(address);
+-    if (hit < HISTOGRAM_ENTRIES)
+-      histogram[hit]++;
++    histogram[hit < HISTOGRAM_ENTRIES ? hit : HISTOGRAM_ENTRIES]++;
+   }
+ }
+ 
+@@ -38,15 +38,18 @@ void measure_misses(void *address, size_t *histogram,
+   for (size_t i = 0; i < number_of_measurements; i++) {
+     evict_tlb(address);
+     size_t miss = measure_access_time(address);
+-    if (miss < HISTOGRAM_ENTRIES)
+-      histogram[miss]++;
++    histogram[miss < HISTOGRAM_ENTRIES ? miss : HISTOGRAM_ENTRIES]++;
+   }
+ }
+ 
+-size_t hit_histogram[HISTOGRAM_ENTRIES], miss_histogram[HISTOGRAM_ENTRIES];
++size_t hit_histogram[HISTOGRAM_ENTRIES + 1], miss_histogram[HISTOGRAM_ENTRIES + 1];
+ char __attribute__((aligned(4096))) address[4096];
+ 
+ int main(int argc, char *argv[]) {
++  size_t measurements =
++      argc > 1 ? strtoul(argv[1], NULL, 0) : DEFAULT_MEASUREMENTS;
++  fprintf(stdout, "measurements: %zu\n", measurements);
++
+   FILE *logfile = fopen(LOGFILE, "w+");
+   if (logfile == NULL) {
+     fprintf(stderr, "Error: Could not open logfile: %s\n", LOGFILE);
+@@ -58,8 +61,8 @@ int main(int argc, char *argv[]) {
+   memset(address, 1, 4096);
+   memset(buffer, 2, sizeof(buffer));
+ 
+-  measure_hits(address, hit_histogram, MEASUREMENTS);
+-  measure_misses(address, miss_histogram, MEASUREMENTS);
++  measure_hits(address, hit_histogram, measurements);
++  measure_misses(address, miss_histogram, measurements);
+ 
+   for (size_t i = 0; i < HISTOGRAM_ENTRIES; i += HISTOGRAM_SCALE) {
+     size_t hit = 0, miss = 0;
+@@ -73,6 +76,9 @@ int main(int argc, char *argv[]) {
+     }
+   }
+ 
++  fprintf(stdout, "  >=%d: %10zu %10zu\n", HISTOGRAM_ENTRIES,
++          hit_histogram[HISTOGRAM_ENTRIES], miss_histogram[HISTOGRAM_ENTRIES]);
++
+   fclose(logfile);
+ 
+   return 0;

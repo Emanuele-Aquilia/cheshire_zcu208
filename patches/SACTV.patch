@@ -1,0 +1,752 @@
+diff --git a/Makefile b/Makefile
+index 78e9644..719f513 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,11 +1,15 @@
+ GCC=gcc
+-CROSS_GCC=riscv64-unknown-linux-gnu-gcc
++CROSS_GCC=/home/emanuele/Desktop/cheshire_zcu208/sw/deps/cva6-sdk/buildroot/output/host/bin/riscv64-buildroot-linux-gnu-gcc
+ CFLAGS=-O0 -DON_MULTIPLE_LINES=1 -DMMAP_ARRAY
+ #CFLAGS=-O0
+ INCLUDE=-Iinclude/
+ EVICT_SRC=src/evict.c src/eviction_evaluation.c
+ HIST_SRC=src/evict.c src/timing_histogram.c
+ BENCH_SRC=src/generate_compilation_commands.c
++# runs per binary, tests per run, histogram size (make benchmark RUNS=100 ...)
++RUNS ?= 30
++NUM_TEST ?= 10
++MAX_CYCLE ?= 8000
+ 
+ 
+ evict:
+@@ -63,8 +67,8 @@ benchmark:
+ 	$(GCC) $(INCLUDE) $(CFLAGS) $(BENCH_SRC) -DBOARD=$(TARGET) -o generate_compilation_commands_$(TARGET)
+ 	#./generate_compilation_commands_$(TARGET) -m $(TARGET)
+ 	# for cross-platform, uncomment:
+-	./generate_compilation_commands_$(TARGET) -m $(TARGET) -g $(CROSS_GCC)
+-	sh benchmark_scripts/$(TARGET)_EachRun30_NumTest10_MaxCycle8000.sh
++	./generate_compilation_commands_$(TARGET) -m $(TARGET) -g $(CROSS_GCC) -r $(RUNS) -n $(NUM_TEST) -c $(MAX_CYCLE)
++	sh benchmark_scripts/$(TARGET)_EachRun$(RUNS)_NumTest$(NUM_TEST)_MaxCycle$(MAX_CYCLE).sh
+ 
+ clean:
+ 	rm -Rf benchmark_output/*/
+diff --git a/include/asm_functions.h b/include/asm_functions.h
+index a417ddd..405d842 100644
+--- a/include/asm_functions.h
++++ b/include/asm_functions.h
+@@ -25,6 +25,23 @@
+ 
+ #include <stdint.h>
+ 
++#include "board.h"
++
++/*
++ * Fences used to serialize memory operations. A board whose fence flushes the
++ * data cache (e.g. CVA6 with the std WB dcache) defines FENCE_FLUSHES_DCACHE,
++ * which turns them into no-ops so that they don't destroy the cache state.
++ */
++#ifdef FENCE_FLUSHES_DCACHE
++#define FENCE_R_RW  ""
++#define FENCE_RW_RW ""
++#define FENCE_W_W   ""
++#else
++#define FENCE_R_RW  "fence r, rw \n"
++#define FENCE_RW_RW "fence rw, rw \n"
++#define FENCE_W_W   "fence w, w \n"
++#endif // FENCE_FLUSHES_DCACHE
++
+ #ifndef ON_MULTIPLE_LINES
+ #define ON_MULTIPLE_LINES 0
+ #endif // !ON_MULTIPLE_LINES
+@@ -34,7 +51,7 @@ __attribute__((always_inline))
+ static inline void fence_rwrw()
+ {
+     asm __volatile__(
+-        "fence rw, rw \n"// mfence
++        FENCE_RW_RW      // mfence
+     );
+ }
+ 
+@@ -42,7 +59,7 @@ __attribute__((always_inline))
+ static inline void fence_rrw()
+ {
+     asm __volatile__(
+-        "fence r, rw \n"// lfence
++        FENCE_R_RW      // lfence
+     );
+ }
+ 
+@@ -50,7 +67,7 @@ __attribute__((always_inline))
+ static inline void fence_ww()
+ {
+     asm __volatile__(
+-        "fence w, w \n"// sfence
++        FENCE_W_W      // sfence
+     );
+ }
+ 
+@@ -71,26 +88,26 @@ static inline uint64_t mread_timing(char* char_ptr)
+ {
+     uint64_t time = 0;
+     asm __volatile__ (          // previously:
+-        "fence r, rw         \n"//   lfence
++        FENCE_R_RW              //   lfence
+         "rdcycle t1          \n"//   rdtsc -> store inside eax
+                                 //   movl %%eax, %%esi
+         "ld t0,   0(%[c])    \n"//   movq (%%rcx),   %%rax
+-        "fence r, rw         \n"//   lfence
++        FENCE_R_RW              //   lfence
+ #if ON_MULTIPLE_LINES
+         "ld t0,  64(%[c])    \n"//   movq 64(%%rcx), %%rax
+-        "fence r, rw         \n"//   lfence
++        FENCE_R_RW              //   lfence
+         "ld t0, 448(%[c])    \n"//   movq 448(%%rcx),%%rax
+-        "fence r, rw         \n"//   lfence
++        FENCE_R_RW              //   lfence
+         "ld t0, 256(%[c])    \n"//   movq 256(%%rcx),%%rax
+-        "fence r, rw         \n"//   lfence
++        FENCE_R_RW              //   lfence
+         "ld t0, 384(%[c])    \n"//   movq 384(%%rcx),%%rax
+-        "fence r, rw         \n"//   lfence
++        FENCE_R_RW              //   lfence
+         "ld t0, 320(%[c])    \n"//   movq 320(%%rcx),%%rax
+-        "fence r, rw         \n"//   lfence
++        FENCE_R_RW              //   lfence
+         "ld t0, 192(%[c])    \n"//   movq 192(%%rcx),%%rax
+-        "fence r, rw         \n"//   lfence
++        FENCE_R_RW              //   lfence
+         "ld t0, 128(%[c])    \n"//   movq 128(%%rcx),%%rax
+-        "fence r, rw         \n"//   lfence
++        FENCE_R_RW              //   lfence
+ #endif // ON_MULTIPLE_LINES
+         "rdcycle t2          \n"//   rdtsc -> store inside eax
+         "sub %[t], t2, t1    \n"//   subl %%esi, %%eax
+@@ -105,24 +122,24 @@ __attribute__((always_inline))
+ static inline void mread_mfenced(char* char_ptr)
+ {
+     asm __volatile__ (          // previously:
+-        "fence rw, rw         \n"//   mfence
++        FENCE_RW_RW              //   mfence
+         "ld t0,   0(%[c])    \n"//   movq (%%rcx),   %%rax
+-        "fence rw, rw         \n"//   mfence
++        FENCE_RW_RW              //   mfence
+ #if ON_MULTIPLE_LINES
+         "ld t0,  64(%[c])    \n"//   movq 64(%%rcx), %%rax
+-        "fence rw, rw         \n"//   mfence
++        FENCE_RW_RW              //   mfence
+         "ld t0, 448(%[c])    \n"//   movq 448(%%rcx),%%rax
+-        "fence rw, rw         \n"//   mfence
++        FENCE_RW_RW              //   mfence
+         "ld t0, 256(%[c])    \n"//   movq 256(%%rcx),%%rax
+-        "fence rw, rw         \n"//   mfence
++        FENCE_RW_RW              //   mfence
+         "ld t0, 384(%[c])    \n"//   movq 384(%%rcx),%%rax
+-        "fence rw, rw         \n"//   mfence
++        FENCE_RW_RW              //   mfence
+         "ld t0, 320(%[c])    \n"//   movq 320(%%rcx),%%rax
+-        "fence rw, rw         \n"//   mfence
++        FENCE_RW_RW              //   mfence
+         "ld t0, 192(%[c])    \n"//   movq 192(%%rcx),%%rax
+-        "fence rw, rw         \n"//   mfence
++        FENCE_RW_RW              //   mfence
+         "ld t0, 128(%[c])    \n"//   movq 128(%%rcx),%%rax
+-        "fence rw, rw         \n"//   mfence
++        FENCE_RW_RW              //   mfence
+ #endif // ON_MULTIPLE_LINES
+         :
+         : [c] "r" (char_ptr)    //: "c" (char_ptr)
+@@ -134,7 +151,7 @@ __attribute__((always_inline))
+ static inline void mread(char* char_ptr)
+ {
+     asm __volatile__ (          // previously:
+-        "fence r, rw         \n"//   lfence
++        FENCE_R_RW              //   lfence
+         "ld t0,   0(%[c])    \n"//   movq (%%rcx),   %%rax
+ #if ON_MULTIPLE_LINES
+         "ld t0,  64(%[c])    \n"//   movq 64(%%rcx), %%rax
+@@ -145,7 +162,7 @@ static inline void mread(char* char_ptr)
+         "ld t0, 192(%[c])    \n"//   movq 192(%%rcx),%%rax
+         "ld t0, 128(%[c])    \n"//   movq 128(%%rcx),%%rax
+ #endif // ON_MULTIPLE_LINES
+-        "fence r, rw         \n"//   lfence
++        FENCE_R_RW              //   lfence
+         :
+         : [c] "r" (char_ptr)    //: "c" (char_ptr)
+         : "t0", "memory"        //: "%esi", "%edx"
+@@ -158,26 +175,26 @@ static inline uint64_t mwrite_timing(char* char_ptr)
+ {
+     uint64_t time = 0;
+     asm __volatile__ (      // previously using mfence
+-        "fence rw, rw           \n"
++        FENCE_RW_RW                
+         "rdcycle t1         \n" //   rdtsc -> store inside eax
+                                 //   movl %%eax, %%esi
+         "sd %[c],    0(%[c])    \n"
+-        "fence rw, rw           \n"
++        FENCE_RW_RW                
+ #if ON_MULTIPLE_LINES
+         "sd %[c],   64(%[c])    \n"
+-        "fence rw, rw           \n"
++        FENCE_RW_RW                
+         "sd %[c],  448(%[c])    \n"
+-        "fence rw, rw           \n"
++        FENCE_RW_RW                
+         "sd %[c],  256(%[c])    \n"
+-        "fence rw, rw           \n"
++        FENCE_RW_RW                
+         "sd %[c],  384(%[c])    \n"
+-        "fence rw, rw           \n"
++        FENCE_RW_RW                
+         "sd %[c],  320(%[c])    \n"
+-        "fence rw, rw           \n"
++        FENCE_RW_RW                
+         "sd %[c],  192(%[c])    \n"
+-        "fence rw, rw           \n"
++        FENCE_RW_RW                
+         "sd %[c],  128(%[c])    \n"
+-        "fence rw, rw           \n"
++        FENCE_RW_RW                
+ #endif // ON_MULTIPLE_LINES
+         "rdcycle t2         \n" //   rdtsc -> store inside eax
+         "sub %[t], t2, t1   \n" //   subl %%esi, %%eax
+@@ -192,24 +209,24 @@ __attribute__((always_inline))
+ static inline uint64_t mwrite_mfenced(char* char_ptr)
+ {
+     asm __volatile__ (      // previously using mfence
+-        "fence rw, rw           \n"
++        FENCE_RW_RW                
+         "sd %[c],    0(%[c])    \n"
+-        "fence rw, rw           \n"
++        FENCE_RW_RW                
+ #if ON_MULTIPLE_LINES
+         "sd %[c],   64(%[c])    \n"
+-        "fence rw, rw           \n"
++        FENCE_RW_RW                
+         "sd %[c],  448(%[c])    \n"
+-        "fence rw, rw           \n"
++        FENCE_RW_RW                
+         "sd %[c],  256(%[c])    \n"
+-        "fence rw, rw           \n"
++        FENCE_RW_RW                
+         "sd %[c],  384(%[c])    \n"
+-        "fence rw, rw           \n"
++        FENCE_RW_RW                
+         "sd %[c],  320(%[c])    \n"
+-        "fence rw, rw           \n"
++        FENCE_RW_RW                
+         "sd %[c],  192(%[c])    \n"
+-        "fence rw, rw           \n"
++        FENCE_RW_RW                
+         "sd %[c],  128(%[c])    \n"
+-        "fence rw, rw           \n"
++        FENCE_RW_RW                
+ #endif // ON_MULTIPLE_LINES
+         :
+         : [c] "r" (char_ptr)    //: "c" (start[0])
+@@ -221,25 +238,25 @@ __attribute__((always_inline))
+ static inline void mwrite_dirty(char* char_ptr)
+ {
+     asm __volatile__ (          // previously using sfence
+-        "fence w, w             \n"
++        FENCE_W_W                  
+         "sd %[c],     (%[c])    \n"
+ #if ON_MULTIPLE_LINES
+-        "fence w, w             \n"
++        FENCE_W_W                  
+         "sd %[c],   64(%[c])    \n"
+-        "fence w, w             \n"
++        FENCE_W_W                  
+         "sd %[c],  448(%[c])    \n"
+-        "fence w, w             \n"
++        FENCE_W_W                  
+         "sd %[c],  256(%[c])    \n"
+-        "fence w, w             \n"
++        FENCE_W_W                  
+         "sd %[c],  384(%[c])    \n"
+-        "fence w, w             \n"
++        FENCE_W_W                  
+         "sd %[c],  320(%[c])    \n"
+-        "fence w, w             \n"
++        FENCE_W_W                  
+         "sd %[c],  192(%[c])    \n"
+-        "fence w, w             \n"
++        FENCE_W_W                  
+         "sd %[c],  128(%[c])    \n"
+ #endif // ON_MULTIPLE_LINES
+-        "fence w, w             \n"
++        FENCE_W_W                  
+         :
+         : [c] "r" (char_ptr)
+         : "memory"
+diff --git a/include/benchmark.h b/include/benchmark.h
+index f55f3e6..b447298 100644
+--- a/include/benchmark.h
++++ b/include/benchmark.h
+@@ -476,7 +476,7 @@
+     switch (vul) \
+     { \
+         case INV: \
+-            int var_num = 0; \
++            var_num = 0; \
+             UNROLL_MOP(moperation, start, 0, tar_block, 0) \
+             UNROLL_MOP(moperation, start, L1_S, tar_block, 0) \
+             UNROLL_MOP(moperation, start, 2*L1_S, tar_block, 0) \
+@@ -519,7 +519,7 @@
+     switch (vul) \
+     { \
+         case INV: \
+-            int var_num = 0; \
++            var_num = 0; \
+             UNROLL_TIMING_MOP(moperation, start, 0, tar_block, 0, t, 0) \
+             UNROLL_TIMING_MOP(moperation, start, L1_S, tar_block, 0, t, L1_ASSOC) \
+             UNROLL_TIMING_MOP(moperation, start, 2*L1_S, tar_block, 0, t, 2*L1_ASSOC) \
+diff --git a/include/board.h b/include/board.h
+index 8f9fa28..2a87fa2 100644
+--- a/include/board.h
++++ b/include/board.h
+@@ -31,6 +31,8 @@
+ #define BOARD_BV_FIRE       3
+ #define BOARD_PIONEER       4
+ #define BOARD_ESP32_C6      5
++#define BOARD_CHESHIRE      6
++#define BOARD_CHESHIRE_LLC  7 // Cheshire with the LLC switched to cache mode
+ 
+ #ifndef BOARD
+     #error "No board defined. Use '-DBOARD=...' to define it."
+@@ -46,6 +48,12 @@
+ #elif TARGET(BOARD) == BOARD_BV_FIRE
+ #include "boards/bv_fire.h"
+ 
++#elif TARGET(BOARD) == BOARD_CHESHIRE || TARGET(BOARD) == BOARD_CHESHIRE_LLC
++#if TARGET(BOARD) == BOARD_CHESHIRE_LLC
++#define CHESHIRE_LLC
++#endif
++#include "boards/cheshire.h"
++
+ #elif TARGET(BOARD) == BOARD_ESP32_C6
+     //#define NO_L2_CACHE
+     //#define SINGLE_CORE
+@@ -64,18 +72,36 @@
+ #define CACHE_LINE 0x40 // 64B cache block
+ #endif
+ 
++#ifndef L1_CACHE_LINE
++#define L1_CACHE_LINE CACHE_LINE
++#endif
++
++#ifndef L2_CACHE_LINE
++#define L2_CACHE_LINE CACHE_LINE
++#endif
++
++#ifndef L3_CACHE_LINE
++#define L3_CACHE_LINE CACHE_LINE
++#endif
++
++#ifndef L1_CACHE_SETS
+ #if defined(L1_CACHE_SIZE) && defined(L1_ASSOC)
+-#define L1_CACHE_SETS L1_CACHE_SIZE/(L1_ASSOC*CACHE_LINE)
++#define L1_CACHE_SETS L1_CACHE_SIZE/(L1_ASSOC*L1_CACHE_LINE)
++#endif
+ #endif
+ 
+ 
++#ifndef L2_CACHE_SETS
+ #if defined(L2_CACHE_SIZE) && defined(L2_ASSOC)
+-#define L2_CACHE_SETS L2_CACHE_SIZE/(L2_ASSOC*CACHE_LINE)
++#define L2_CACHE_SETS L2_CACHE_SIZE/(L2_ASSOC*L2_CACHE_LINE)
++#endif
+ #endif
+ 
+ 
++#ifndef L3_CACHE_SETS
+ #if defined(L3_CACHE_SIZE) && defined(L3_ASSOC)
+-#define L3_CACHE_SETS L3_CACHE_SIZE/(L3_ASSOC*CACHE_LINE)
++#define L3_CACHE_SETS L3_CACHE_SIZE/(L3_ASSOC*L3_CACHE_LINE)
++#endif
+ #endif
+ 
+ #ifdef NO_L2_CACHE
+@@ -103,12 +129,12 @@
+ #define L2_TOTAL_WAYS   L2_CACHE_SETS*L2_ASSOC
+ #endif /* ifndef NO_L2_CACHE */
+ 
+-#define L1_STRIDE       L1_CACHE_SETS*CACHE_LINE
++#define L1_STRIDE       L1_CACHE_SETS*L1_CACHE_LINE
+ #ifndef NO_L2_CACHE
+-#define L2_STRIDE       L2_CACHE_SETS*CACHE_LINE
++#define L2_STRIDE       L2_CACHE_SETS*L2_CACHE_LINE
+ #endif /* ifndef NO_L2_CACHE */
+ #ifndef NO_L3_CACHE
+-#define L3_STRIDE       L3_CACHE_SETS*CACHE_LINE
++#define L3_STRIDE       L3_CACHE_SETS*L3_CACHE_LINE
+ #endif /* ifndef NO_L3_CACHE */
+ 
+ 
+diff --git a/include/boards/cheshire.h b/include/boards/cheshire.h
+new file mode 100644
+index 0000000..416237c
+--- /dev/null
++++ b/include/boards/cheshire.h
+@@ -0,0 +1,73 @@
++/*
++* This file defines the Cheshire (CVA6) SoC board macros for SACTV
++*
++* Copyright (C) 2026 Emanuele Aquilia <s337181@studenti.polito.it>
++*
++*/
++
++#ifndef __CHESHIRE_BOARD_H
++#define __CHESHIRE_BOARD_H
++
++#include <stddef.h>
++
++/* CONSTANTS */
++
++/* Board-specific constants */
++#define CACHE_LINE      64 // 64B cache block
++#define L1_CACHE_LINE   16 // 16B cache block for L1 D-Cache
++#define L2_CACHE_LINE   64 // 64B cache block for L2 LLC
++
++#define L1_CACHE_SIZE   32*1024 // 32 KiB L1 D-Cache
++#define L1_ASSOC        8       // 8-way associative
++
++/*
++ * The axi_llc is all-SPM (bypassed) under the default boot, so the hierarchy
++ * is L1 + DDR4. Build with -DCHESHIRE_LLC when the LLC was switched to cache
++ * mode at the U-Boot prompt (CFG_SPM = 0, COMMIT = 1).
++ */
++#ifdef CHESHIRE_LLC
++#define L2_CACHE_SIZE   128*1024 // 128 KiB LLC (Last Level Cache)
++#define L2_ASSOC        8        // 8-way associative
++#else
++#define NO_L2_CACHE
++#endif
++
++#define NO_L3_CACHE
++#define NO_FLUSH
++#define SINGLE_CORE
++
++/*
++ * CVA6 (pulp-v2.0.0, std WB dcache) decodes every fence variant as a full
++ * dcache write-back + invalidate, so the fences used for serialization in
++ * asm_functions.h become no-ops. CVA6 is in-order and rdcycle commits after
++ * the preceding load has returned, so no fence is needed around timings.
++ */
++#define FENCE_FLUSHES_DCACHE
++
++/* Eviction strategy parameters */
++#define L1_C 4
++#define L1_S L1_ASSOC+2
++#define L1_D L1_S-1
++#define L1_L 1
++
++#define L2_C 4
++#define L2_S L2_ASSOC+2
++#define L2_D L2_S-1
++#define L2_L 1
++
++/* CPU definitions (single core, so everything is core 0) */
++#define LOCAL_CPU1  0
++#define LOCAL_CPU2  0
++#define REMOTE_CPU1 0
++#define REMOTE_CPU2 0
++#define REST_CPU    0
++
++/* Board-specific inline instructions */
++__attribute__((always_inline))
++static inline void flush(size_t char_ptr)
++{
++    // NO_FLUSH is defined, so standard flush instruction is bypassed.
++    (void)char_ptr;
++}
++
++#endif // !__CHESHIRE_BOARD_H
+diff --git a/scripts/run_benchmark.sh b/scripts/run_benchmark.sh
+index 2270306..75bd657 100755
+--- a/scripts/run_benchmark.sh
++++ b/scripts/run_benchmark.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/bin/sh
+ 
+ #
+ # This file run each benchmark code and output results
+@@ -22,38 +22,67 @@
+ #
+ #
+ 
+-set -e
++usage() {
++  cat <<EOF
++Usage: $0 [-l] target_name output_name [prefix ...]
++  target_name  board symbol, binaries are in benchmark_output/<target_name>/
++  output_name  results are appended to benchmark_output/<output_name>.output(.res)
++  prefix       only run the binaries whose name starts with one of the prefixes:
++                 04                                whole vulnerability 04
++                 04_AccOne1                        its cases with a write in step 1
++                 04_AccOne1_AccTwo0_AccThr0_Aff0   one case (normal + _plain run)
++               default: every binary
++  -l           only list the selected binaries
++The new result lines of each binary are printed as soon as it finishes, so an
++interrupted run keeps everything done so far in the UART log.
++EOF
++}
++
++list_only=0
++while getopts "lh" opt; do
++  case $opt in
++    l) list_only=1 ;;
++    *) usage; exit 1 ;;
++  esac
++done
++shift $((OPTIND - 1))
++[ $# -lt 2 ] && { usage; exit 1; }
+ 
+ target_name=$1
+ output_name=$2
++shift 2
++
++# binaries and results are relative to the folder holding scripts/
++cd "$(dirname "$0")/.." || exit 1
+ 
++files=$(find benchmark_output/$target_name -maxdepth 1 -type f -name '*AccOne*AccTwo*AccThr*' \
++        | sed 's_.*/__' | sort -n)
++if [ $# -gt 0 ]; then
++  files=$(echo "$files" | grep -E "^($(echo "$*" | sed 's/ /|/g'))")
++fi
++total=$(echo "$files" | grep -c .)
++if [ "$total" -eq 0 ]; then
++  echo "No binary in benchmark_output/$target_name matches: $*"
++  exit 1
++fi
++
++if [ $list_only -eq 1 ]; then
++  echo "$files" | nl
++  exit 0
++fi
++
++output=benchmark_output/$output_name.output
+ i=0
+-for file in `find . -name '*AccOne*AccTwo*AccThr*' | grep $target_name | sed 's_./__' | sort -n`
++start=$(date +%s)
++for filename in $files
+ do
+-  echo "i is $i"
+-  let i=$i+1
+-  filename=$(echo "$file" | sed 's_.*/__')
+-  echo "Executing: file $filename"
+-  ./${file} ./benchmark_output/$output_name > /dev/null &
+-
+-  ps
+-  PID2=$(ps -ef | grep ${file} | awk '{print $2}')
+-  j=0 
+-  pid=0
+-  ori=1
+-  for word in $PID2
+-  do
+-    let j=$j+1
+-      echo $word
+-      if [ "$j" == "$ori" ]
+-    then
+-        pid=$word
+-    fi
+-  done
+-  echo $pid
+-  echo "Before finishing ${filename}"
+-  while ps -ef | grep ${file} | grep -v grep > /dev/null; do sleep 0.5; done
+-  echo "Finished ${filename}"
+-
++  i=$((i + 1))
++  before=$(cat "$output" 2>/dev/null | wc -l)
++  t0=$(date +%s)
++  echo "[$i/$total] Executing: file $filename"
++  ./benchmark_output/$target_name/$filename ./benchmark_output/$output_name > /dev/null
++  rc=$?
++  echo "[$i/$total] Finished ${filename} in $(( $(date +%s) - t0 )) s (exit $rc)"
++  sed -n "$((before + 1)),\$p" "$output"
+ done
+-echo "Finished"
++echo "Finished $total binaries in $(( $(date +%s) - start )) s"
+diff --git a/src/generate_compilation_commands.c b/src/generate_compilation_commands.c
+index c079ae8..59ee207 100644
+--- a/src/generate_compilation_commands.c
++++ b/src/generate_compilation_commands.c
+@@ -174,9 +174,14 @@ int main(int argc, char const *argv[])
+     char* binary_path[100];
+     char* plain[10];
+ 
++    char static_flag[16] = "";
++    if (strncmp(attack_machine, "CHESHIRE", 8) == 0) { // CHESHIRE, CHESHIRE_LLC
++        strcpy(static_flag, "-static ");
++    }
++
+     sprintf(command_basis,
+-            "%s -Iinclude/ -DBOARD=%s -DON_MULTIPLE_LINES=%d -O0 ",
+-            gcc_compiler, attack_machine, ON_MULTIPLE_LINES
++            "%s %s-Iinclude/ -DBOARD=%s -DON_MULTIPLE_LINES=%d -O0 ",
++            gcc_compiler, static_flag, attack_machine, ON_MULTIPLE_LINES
+     );
+     sprintf(binary_folder, "benchmark_output/%s", attack_machine);
+     sprintf(object_folder, "%s/objects", binary_folder);
+@@ -470,17 +475,17 @@ int main(int argc, char const *argv[])
+                             "src/benchmark.c -o %s/%s.o\n",
+                             command_basis, flags, object_folder, binary_name);
+                         fprintf(fout,
+-                            "%s %s/evict.o %s/stats.o %s/%s.o -o %s -lm\n",
++                            "%s %s/evict.o %s/stats.o %s/%s.o %s-o %s -lm\n",
+                             gcc_compiler, object_folder, object_folder,
+-                            object_folder, binary_name, binary_path);
++                            object_folder, binary_name, static_flag, binary_path);
+                         }
+                         else
+                         {
+                         fprintf(fout, "%s %s -c src/benchmark.c -o %s/benchmark.o\n",
+                             command_basis, flags, object_folder);
+-                        fprintf(fout, "%s %s/evict.o %s/stats.o %s/benchmark.o -o %s -lm\n",
++                        fprintf(fout, "%s %s/evict.o %s/stats.o %s/benchmark.o %s-o %s -lm\n",
+                             gcc_compiler, object_folder, object_folder,
+-                            object_folder, binary_path);
++                            object_folder, static_flag, binary_path);
+                         }
+                     }
+                     }
+diff --git a/src/timing_histogram.c b/src/timing_histogram.c
+index 9c00e0b..91cbd1d 100644
+--- a/src/timing_histogram.c
++++ b/src/timing_histogram.c
+@@ -372,7 +372,7 @@ unsigned long test_delay(char* start[], int sec, int mea_type)
+ 
+ 
+ 
+-    /* if access from remote proc., change CPU to CPU 3 */
++    /* if access from remote proc., change CPU to REMOTE_CPU1 */
+     if (sec == L1_REMOTE_L1_HIT_CLEAN
+             || sec == L1_REMOTE_L2_HIT_CLEAN
+             || sec == L1_REMOTE_L3_HIT_CLEAN
+@@ -384,7 +384,7 @@ unsigned long test_delay(char* start[], int sec, int mea_type)
+             || sec == L3_REMOTE_L3_HIT_CLEAN)
+     {
+         CPU_ZERO(&mycpuset);
+-        CPU_SET(3, &mycpuset);
++        CPU_SET(REMOTE_CPU1, &mycpuset);
+         if (sched_setaffinity(getpid(), sizeof(cpu_set_t), &mycpuset) == -1)
+         {
+             perror("sched_setaffinity");
+@@ -412,7 +412,7 @@ unsigned long test_delay(char* start[], int sec, int mea_type)
+         //evict_L2(start, conflict_set, conflict_bar);
+     }
+ 
+-    /* if access was from remote proc., change CPU back to CPU 1 */
++    /* if access was from remote proc., change CPU back to LOCAL_CPU1 */
+     if (sec == L1_REMOTE_L1_HIT_CLEAN
+             || sec == L1_REMOTE_L2_HIT_CLEAN
+             || sec == L1_REMOTE_L3_HIT_CLEAN
+@@ -424,7 +424,7 @@ unsigned long test_delay(char* start[], int sec, int mea_type)
+             || sec == L3_REMOTE_L3_HIT_CLEAN)
+     {
+         CPU_ZERO(&mycpuset);
+-        CPU_SET(1, &mycpuset);
++        CPU_SET(LOCAL_CPU1, &mycpuset);
+         if (sched_setaffinity(getpid(), sizeof(cpu_set_t), &mycpuset) == -1)
+         {
+               perror("sched_setaffinity");
+@@ -433,13 +433,13 @@ unsigned long test_delay(char* start[], int sec, int mea_type)
+ 
+ 
+ 
+-    /* if access from remote proc., change CPU to CPU 3 */
++    /* if access from remote proc., change CPU to REMOTE_CPU1 */
+     if (sec == REMOTE_L1_HIT_CLEAN || sec == REMOTE_L1_HIT_DIRTY
+             || sec == REMOTE_L2_HIT_CLEAN || sec == REMOTE_L2_HIT_DIRTY
+             || sec == REMOTE_L3_HIT_CLEAN || sec == REMOTE_L3_HIT_DIRTY)
+     {
+         CPU_ZERO(&mycpuset);
+-        CPU_SET(3, &mycpuset);
++        CPU_SET(REMOTE_CPU1, &mycpuset);
+         if (sched_setaffinity(getpid(), sizeof(cpu_set_t), &mycpuset) == -1)
+         {
+             perror("sched_setaffinity");
+@@ -468,13 +468,13 @@ unsigned long test_delay(char* start[], int sec, int mea_type)
+         mwrite_dirty(start[0]);
+     }
+ 
+-    /* if access was from remote proc., change CPU back to CPU 1 */
++    /* if access was from remote proc., change CPU back to LOCAL_CPU1 */
+     if (sec == REMOTE_L1_HIT_CLEAN || sec == REMOTE_L1_HIT_DIRTY
+             || sec == REMOTE_L2_HIT_CLEAN || sec == REMOTE_L2_HIT_DIRTY
+             || sec == REMOTE_L3_HIT_CLEAN || sec == REMOTE_L3_HIT_DIRTY)
+     {
+         CPU_ZERO(&mycpuset);
+-        CPU_SET(1, &mycpuset);
++        CPU_SET(LOCAL_CPU1, &mycpuset);
+         if (sched_setaffinity(getpid(), sizeof(cpu_set_t), &mycpuset) == -1)
+         {
+             perror("sched_setaffinity");
+@@ -486,11 +486,11 @@ unsigned long test_delay(char* start[], int sec, int mea_type)
+     if (sec == L2_HIT_CLEAN || sec == L2_HIT_DIRTY
+             || sec == REMOTE_L2_HIT_CLEAN || sec == REMOTE_L2_HIT_DIRTY)
+     {
+-        /* if access from remote proc., change CPU to CPU 3 */
++        /* if access from remote proc., change CPU to REMOTE_CPU1 */
+         if (sec == REMOTE_L2_HIT_CLEAN || sec == REMOTE_L2_HIT_DIRTY)
+         {
+             CPU_ZERO(&mycpuset); 
+-            CPU_SET(3, &mycpuset);
++            CPU_SET(REMOTE_CPU1, &mycpuset);
+             if (sched_setaffinity(getpid(), sizeof(cpu_set_t), &mycpuset) == -1)
+             {
+                 perror("sched_setaffinity");
+@@ -501,11 +501,11 @@ unsigned long test_delay(char* start[], int sec, int mea_type)
+         // ensure start[0] is in L2 but not in L1 (local or remote)
+         evict(start_L1, L1_C, L1_D, L1_L, L1_S);
+ 
+-        /* if access was from remote proc., change CPU back to CPU 1 */
++        /* if access was from remote proc., change CPU back to LOCAL_CPU1 */
+         if (sec == REMOTE_L2_HIT_CLEAN || sec == REMOTE_L2_HIT_DIRTY)
+         {
+             CPU_ZERO(&mycpuset);
+-            CPU_SET(1, &mycpuset);
++            CPU_SET(LOCAL_CPU1, &mycpuset);
+             if (sched_setaffinity(getpid(), sizeof(cpu_set_t), &mycpuset) == -1)
+             {
+                 perror("sched_setaffinity");
+@@ -516,11 +516,11 @@ unsigned long test_delay(char* start[], int sec, int mea_type)
+     else if(sec == L3_HIT_CLEAN || sec == L3_HIT_DIRTY
+                 || sec == REMOTE_L3_HIT_CLEAN || sec == REMOTE_L3_HIT_DIRTY)
+     {
+-        /* if access from remote proc., change CPU to CPU 3 */
++        /* if access from remote proc., change CPU to REMOTE_CPU1 */
+         if (sec == REMOTE_L3_HIT_CLEAN || sec == REMOTE_L3_HIT_DIRTY)
+         {
+             CPU_ZERO(&mycpuset);
+-            CPU_SET(3, &mycpuset);
++            CPU_SET(REMOTE_CPU1, &mycpuset);
+             if (sched_setaffinity(getpid(), sizeof(cpu_set_t), &mycpuset) == -1)
+             {
+                   perror("sched_setaffinity");
+@@ -532,11 +532,11 @@ unsigned long test_delay(char* start[], int sec, int mea_type)
+         evict(start_L2, L2_C, L2_D, L2_L, L2_S);
+         //evict_L2(start, conflict_set, conflict_bar);
+ 
+-        /* if access was from remote proc., change CPU back to CPU 1 */
++        /* if access was from remote proc., change CPU back to LOCAL_CPU1 */
+         if (sec == REMOTE_L3_HIT_CLEAN || sec == REMOTE_L3_HIT_DIRTY)
+         {
+             CPU_ZERO(&mycpuset);
+-            CPU_SET(1, &mycpuset);
++            CPU_SET(LOCAL_CPU1, &mycpuset);
+             if (sched_setaffinity(getpid(), sizeof(cpu_set_t), &mycpuset) == -1)
+             {
+                   perror("sched_setaffinity");
+@@ -746,9 +746,9 @@ int main(int argc, char *argv[])
+     }
+ #endif /* ifdef MMAP_ARRAY */
+ 
+-    // get our CPU: set current CPU to CPU G
++    // get our CPU: set current CPU to REST_CPU
+     CPU_ZERO(&mycpuset);
+-    CPU_SET(1, &mycpuset);
++    CPU_SET(REST_CPU, &mycpuset);
+     if (sched_setaffinity(getpid(), sizeof(cpu_set_t), &mycpuset) == -1)
+     {
+         perror("sched_setaffinity");

@@ -1,14 +1,37 @@
 #!/bin/bash
 
 # ZCU208 Automation Script
-# Programs the board, cleans up Vivado, starts OpenOCD, and launches GDB.
+# Optionally programs the board, cleans up Vivado, starts OpenOCD, and launches GDB.
+#
+# Usage: util/load_and_run.sh [-p] [-l | -n]
+#   -p  program the bitstream first (needed after power-up or a new bitstream)
+#   -l  auto-load Linux images without asking
+#   -n  don't auto-load Linux (plain GDB session) without asking
+
+usage() { sed -n '6,10p' "$0" | sed 's/^# \{0,1\}//'; }
+
+PROGRAM=0
+LOAD_LINUX=""
+while getopts "plnh" opt; do
+    case $opt in
+        p) PROGRAM=1 ;;
+        l) LOAD_LINUX=y ;;
+        n) LOAD_LINUX=n ;;
+        h) usage; exit 0 ;;
+        *) usage; exit 1 ;;
+    esac
+done
 
 # 1. Program the board
-echo "--- Programming ZCU208 ---"
-make xilinx-program-zcu208
-if [ $? -ne 0 ]; then
-    echo "Error: Programming failed."
-    exit 1
+if [ $PROGRAM -eq 1 ]; then
+    echo "--- Programming ZCU208 ---"
+    make xilinx-program-zcu208
+    if [ $? -ne 0 ]; then
+        echo "Error: Programming failed."
+        exit 1
+    fi
+else
+    echo "--- Skipping bitstream programming (use -p to program) ---"
 fi
 
 # 2. Kill hw_server and openocd to free the JTAG interface
@@ -20,7 +43,7 @@ sleep 1
 # 3. Start OpenOCD in the background
 echo "--- Starting OpenOCD ---"
 # We redirect output to a log file so it doesn't clutter your GDB session
-openocd -f util/openocd.zcu208.tcl > openocd.log 2>&1 &
+openocd -f util/openocd.zcu208.tcl > logs/openocd.log 2>&1 &
 OPENOCD_PID=$!
 
 # Give OpenOCD a moment to initialize
@@ -28,13 +51,15 @@ sleep 2
 
 # Check if OpenOCD started successfully
 if ! kill -0 $OPENOCD_PID 2>/dev/null; then
-    echo "Error: OpenOCD failed to start. Check openocd.log"
+    echo "Error: OpenOCD failed to start. Check logs/openocd.log"
     exit 1
 fi
 
 echo "--- Launching GDB ---"
 
-read -p "Do you want to automatically load Linux images? [y/N]: " LOAD_LINUX
+if [ -z "$LOAD_LINUX" ]; then
+    read -p "Do you want to automatically load Linux images? [y/N]: " LOAD_LINUX
+fi
 
 if [[ "$LOAD_LINUX" =~ ^[Yy]$ ]]; then
     echo "--- Preparing Linux Auto-Load Script (ZSL-based) ---"
@@ -73,4 +98,4 @@ echo "--- Shutting down OpenOCD ---"
 kill $OPENOCD_PID 2>/dev/null
 wait $OPENOCD_PID 2>/dev/null
 
-rm openocd.log 2>/dev/null
+rm logs/openocd.log 2>/dev/null
