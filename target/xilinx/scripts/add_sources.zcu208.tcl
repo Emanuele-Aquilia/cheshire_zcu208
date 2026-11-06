@@ -1,5 +1,5 @@
 # This script was generated automatically by bender.
-set ROOT "/home/emanuele/Desktop/thesis_hardware/cheshire_zcu208"
+set ROOT "/home/emanuele/Desktop/cheshire_zcu208"
 
 add_files -norecurse -fileset [current_fileset] [list \
     $ROOT/.bender/git/checkouts/tech_cells_generic-223c43ccbeb688f9/src/fpga/pad_functional_xilinx.sv \
